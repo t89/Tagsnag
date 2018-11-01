@@ -9,6 +9,7 @@
 #
 
 
+import os
 import sys
 from argparse import ArgumentParser
 from tagsnag.tagsnag import Tagsnag
@@ -23,7 +24,7 @@ def main(argv):
 
         ap.add_argument('path', nargs='?')
         options = ap.parse_args()
-        path = options.path
+        path = os.path.normpath(options.path)
         #  path  = os.getenv("~/Development/Python/Tagsnag_Test")
 
         ##
