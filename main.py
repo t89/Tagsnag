@@ -22,7 +22,7 @@ def main(argv):
         LOG = logging.getLogger('logger')
 
         # Create filehandler
-        fh = logging.FileHandler('main.log')
+        fh = logging.FileHandler('Tagsnag.log')
         fh.setLevel(logging.DEBUG)
         LOG.addHandler(fh)
 
