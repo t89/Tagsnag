@@ -19,14 +19,16 @@ class Tagsnag():
 
     def __init__(self):
         super(Tagsnag, self).__init__()
-        self.snags = []
-        self.repoNames = []
         self.initialSetup()
 
 
     def initialSetup(self):
-        self.setupLogger()
+        # Instance variable init
+        self.snags = []
+        self.repoNames = []
 
+        # Advanced setup
+        self.setupLogger()
 
 
     def setupLogger(self):
