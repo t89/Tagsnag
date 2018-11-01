@@ -13,6 +13,7 @@ import sys
 import logging
 from argparse import ArgumentParser
 from xml.dom.minidom import parse, parseString
+from tagsnag.snag import *
 
 def main(argv):
     try:
@@ -69,6 +70,8 @@ def main(argv):
                 filetype = snag.getElementsByTagName("filetype")[0].firstChild.data
                 destination = snag.getElementsByTagName("destination")[0].firstChild.data
 
+                s = Snag(url=url, tag=tag, filename=filename, filetype=filetype, destination=destination)
+                print("{}".format(s))
                 LOG.debug('Tag: {}Filename: {}Filetype: {}Destination: {}'.format(tag, filename, filetype, destination))
 
     except KeyboardInterrupt:
