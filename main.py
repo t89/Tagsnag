@@ -10,10 +10,25 @@
 
 
 import sys
+import logging
 
 def main(argv):
     try:
-        print("{}".format("Hello Professor Falken!"))
+        ##
+        # Setting up logger
+        logging.basicConfig(level=logging.WARNING, format='%(msg)s')
+        LOG = logging.getLogger('logger')
+
+        # Create filehandler
+        fh = logging.FileHandler('main.log')
+        fh.setLevel(logging.DEBUG)
+        LOG.addHandler(fh)
+
+        # Setting logger to debug setting for now, this value will change once we have parsed to arguments
+        logging.getLogger().setLevel(logging.DEBUG)
+
+        LOG.debug('Created Logger.')
+
     except KeyboardInterrupt:
         pass
 
