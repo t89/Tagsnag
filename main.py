@@ -12,6 +12,7 @@
 import sys
 import logging
 from argparse import ArgumentParser
+from xml.dom.minidom import parse, parseString
 
 def main(argv):
     try:
@@ -47,6 +48,28 @@ def main(argv):
             logging.getLogger().setLevel(logging.DEBUG)
         else:
             logging.getLogger().setLevel(logging.INFO)
+
+        ##
+        # Ingest XML File from provided path
+
+        LOG.debug('Attempting to parse xml file: {}'.format(path))
+
+        xml = parse(path)
+        repos = xml.getElementsByTagName('repository')
+
+        for repo in repos:
+            url = repo.getElementsByTagName('url')[0].firstChild.data
+            LOG.debug('Repository: {}'.format(url))
+
+            snags = xml.getElementsByTagName('snag')
+
+            for snag in snags:
+                tag = snag.getElementsByTagName("tag")[0].firstChild.data
+                filename = snag.getElementsByTagName("filename")[0].firstChild.data
+                filetype = snag.getElementsByTagName("filetype")[0].firstChild.data
+                destination = snag.getElementsByTagName("destination")[0].firstChild.data
+
+                LOG.debug('Tag: {}Filename: {}Filetype: {}Destination: {}'.format(tag, filename, filetype, destination))
 
     except KeyboardInterrupt:
         LOG.info('Keyboard Interrupt detected: Exiting.')
