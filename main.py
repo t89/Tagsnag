@@ -41,7 +41,7 @@ def main(argv):
         options = ap.parse_args()
         path = options.path
         #  path  = os.getenv("~/Development/Python/Tagsnag_Test")
-        print("{}".format(path))
+        LOG.debug('Provided Path: {}'.format(path))
 
         if options.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
