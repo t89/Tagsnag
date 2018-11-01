@@ -7,7 +7,6 @@
 #
 
 
-
 class Snag():
     """ Data Class to organize Snags """
 
@@ -17,12 +16,7 @@ class Snag():
         self.filename = filename
         self.filetype = filetype
         self.destination = destination
-        self.name = self._extractNameFromURL(url)
-
-    def _extractNameFromURL(self, url):
-        name = url.split('/')[-1].split('.')[0]
-        return name
 
     def __repr__(self):
-        return "".join([self.name, self.url, self.tag, self.filename, self.filetype, self.destination])
+        return "".join([self.url, self.tag, self.filename, self.filetype, self.destination])
 

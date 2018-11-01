@@ -67,6 +67,9 @@ class Tagsnag():
 
         for repo in doc.findall('repository'):
             url = repo.find('./url').text
+
+            # create repo name by converting to norm path, extracting basepath and cutting off before the .git extension
+            self.repoNames.append(os.path.basename(os.path.normpath(url)).split('.')[0])
             self.log.debug('Repository: {}'.format(url))
 
             for snag in repo.findall('snag'):
@@ -77,7 +80,6 @@ class Tagsnag():
 
                 s = Snag(url=url, tag=tag, filename=filename, filetype=filetype, destination=destination)
                 self.snags.append(s)
-                self.repoNames.append(s.name)
                 self.log.debug('Tag: {}Filename: {}Filetype: {}Destination: {}'.format(tag, filename, filetype, destination))
 
             self.log.debug('Extracted Snags: {}'.format(self.snags))
