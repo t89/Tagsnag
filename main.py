@@ -49,6 +49,7 @@ def main(argv):
             logging.getLogger().setLevel(logging.INFO)
 
     except KeyboardInterrupt:
+        LOG.info('Keyboard Interrupt detected: Exiting.')
         pass
 
 
