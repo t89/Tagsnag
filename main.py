@@ -10,32 +10,14 @@
 
 
 import sys
-import logging
 from argparse import ArgumentParser
-from xml.dom.minidom import parse, parseString
-from tagsnag.snag import *
+from tagsnag.tagsnag import Tagsnag
 
 def main(argv):
+    tagsnag = Tagsnag()
     try:
         ##
-        # Setting up logger
-        logging.basicConfig(level=logging.WARNING, format='%(msg)s')
-        LOG = logging.getLogger('logger')
-
-        # Create filehandler
-        fh = logging.FileHandler('Tagsnag.log')
-        fh.setLevel(logging.DEBUG)
-        LOG.addHandler(fh)
-
-        # Setting logger to debug setting for now, this value will change once we have parsed to arguments
-        logging.getLogger().setLevel(logging.DEBUG)
-
-        LOG.debug('Created Logger.')
-
-        ##
-        # Setting up argument parser
-        LOG.debug('Setting up argument parser...')
-
+        # Create argument parser
         ap = ArgumentParser()
         ap.add_argument('-v', '--verbose', default=True, action='store_true', help='Increase verbosity')
 
@@ -43,39 +25,15 @@ def main(argv):
         options = ap.parse_args()
         path = options.path
         #  path  = os.getenv("~/Development/Python/Tagsnag_Test")
-        LOG.debug('Provided Path: {}'.format(path))
-
-        if options.verbose:
-            logging.getLogger().setLevel(logging.DEBUG)
-        else:
-            logging.getLogger().setLevel(logging.INFO)
 
         ##
-        # Ingest XML File from provided path
+        # Configuring tagsnag using the provided arguments
+        tagsnag.setVerbose(options.verbose)
+        tagsnag.setXMLPath(path)
 
-        LOG.debug('Attempting to parse xml file: {}'.format(path))
-
-        xml = parse(path)
-        repos = xml.getElementsByTagName('repository')
-
-        for repo in repos:
-            url = repo.getElementsByTagName('url')[0].firstChild.data
-            LOG.debug('Repository: {}'.format(url))
-
-            snags = xml.getElementsByTagName('snag')
-
-            for snag in snags:
-                tag = snag.getElementsByTagName("tag")[0].firstChild.data
-                filename = snag.getElementsByTagName("filename")[0].firstChild.data
-                filetype = snag.getElementsByTagName("filetype")[0].firstChild.data
-                destination = snag.getElementsByTagName("destination")[0].firstChild.data
-
-                s = Snag(url=url, tag=tag, filename=filename, filetype=filetype, destination=destination)
-                print("{}".format(s))
-                LOG.debug('Tag: {}Filename: {}Filetype: {}Destination: {}'.format(tag, filename, filetype, destination))
 
     except KeyboardInterrupt:
-        LOG.info('Keyboard Interrupt detected: Exiting.')
+        tagsnag.log.info('Keyboard Interrupt detected: Exiting.')
         pass
 
 
