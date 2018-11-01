@@ -11,13 +11,16 @@ from .snag import Snag
 import os
 import logging
 
-from xml.dom.minidom import parse, parseString
+from xml.etree import ElementTree as ET
+
 
 class Tagsnag():
     """Tagsnag main class"""
 
     def __init__(self):
         super(Tagsnag, self).__init__()
+        self.snags = []
+        self.repoNames = []
         self.initialSetup()
 
 
@@ -60,24 +63,26 @@ class Tagsnag():
 
         self.log.debug('Attempting to parse xml file: {}'.format(path))
 
-        xml = parse(path)
-        repos = xml.getElementsByTagName('repository')
+        doc = ET.parse(path).getroot()
 
-        for repo in repos:
-            url = repo.getElementsByTagName('url')[0].firstChild.data
+        for repo in doc.findall('repository'):
+            url = repo.find('./url').text
             self.log.debug('Repository: {}'.format(url))
 
-            snags = xml.getElementsByTagName('snag')
-
-            for snag in snags:
-                tag = snag.getElementsByTagName("tag")[0].firstChild.data
-                filename = snag.getElementsByTagName("filename")[0].firstChild.data
-                filetype = snag.getElementsByTagName("filetype")[0].firstChild.data
-                destination = snag.getElementsByTagName("destination")[0].firstChild.data
+            for snag in repo.findall('snag'):
+                tag = snag.find('tag').text
+                filename = snag.find('filename').text
+                filetype = snag.find('filetype').text
+                destination = snag.find('destination').text
 
                 s = Snag(url=url, tag=tag, filename=filename, filetype=filetype, destination=destination)
-                print("{}".format(s))
+                self.snags.append(s)
+                self.repoNames.append(s.name)
                 self.log.debug('Tag: {}Filename: {}Filetype: {}Destination: {}'.format(tag, filename, filetype, destination))
+
+            self.log.debug('Extracted Snags: {}'.format(self.snags))
+            self.log.info('Extracted Repositories: {}'.format(self.repoNames))
+
 
     def setVerbose(self, flag):
         """ Verbose Flag Setter """
