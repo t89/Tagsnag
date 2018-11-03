@@ -32,6 +32,8 @@ def main(argv):
         tagsnag.setVerbose(options.verbose)
         tagsnag.setXMLPath(path)
 
+        tagsnag.start()
+
 
     except KeyboardInterrupt:
         tagsnag.log.info('Keyboard Interrupt detected: Exiting.')
