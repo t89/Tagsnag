@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name                          = "Tagsnatch",
-    version                       = "0.0.0",
+    version                       = "0.0.1",
     author                        = "Thomas Johannesmeyer",
     author_email                  = "opensource@geeky.gent",
     description                   = "Search files over multiple Git repos, and extract a certain version",
