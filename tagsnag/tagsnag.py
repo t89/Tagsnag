@@ -91,7 +91,6 @@ class Tagsnag():
             found_paths = self.search_directory(directory=directory, path=repo_path)
 
             if len(found_paths) > 0:
-                print("COPY DIS directory: {}".format(found_paths))
                 self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
 
 
@@ -347,7 +346,7 @@ class Tagsnag():
 
 
     def copy_file_to_destination(self, path, destination):
-        self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
+        self.log.info('Copying from:\n{}\nto:\n{}'.format(path, destination))
 
         if os.path.exists(path):
 
@@ -362,7 +361,7 @@ class Tagsnag():
 
 
     def copy_directory_to_destination(self, path, destination):
-        self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
+        self.log.info('Copying from:\n{}\nto:\n{}'.format(path, destination))
 
         if os.path.exists(path):
 
