@@ -26,22 +26,67 @@ def display_help():
 def main(argv):
     tagsnag = Tagsnag()
     try:
+        cwd_path = os.getcwd()
+
         ##
         # Create argument parser
         ap = ArgumentParser()
-        ap.add_argument('-v', '--verbose', default=True, action='store_true', help='Increase verbosity')
-
-        ap.add_argument('path', nargs='?')
-        options = ap.parse_args()
-        path = os.path.normpath(options.path)
-        #  path  = os.getenv("~/Development/Python/Tagsnag_Test")
 
         ##
-        # Configuring tagsnag using the provided arguments
-        tagsnag.setVerbose(options.verbose)
-        tagsnag.setXMLPath(path)
+        # Optionals
+        ap.add_argument('-d', '--destination', default=cwd_path, help='Destination Path')
+        ap.add_argument('-f', '--filename', help='String the filename contains')
+        ap.add_argument('-t', '--tag', help='String the Tag you would like to checkout contains')
+        #  ap.add_argument('-b', '--branch', help='String the Tag you would like to checkout contains')
+        ap.add_argument('-x', '--xml', help='Provide an xml config file')
+        ap.add_argument('-e', '--extension', help='Specify a file extension')
 
-        tagsnag.start()
+        ##
+        # Flags
+        ap.add_argument('-u', '--update', default=False, action='store_true', help='Pull from origin/master into master prior to checkout')
+        ap.add_argument('-v', '--verbose', default=False, action='store_true', help='Increase verbosity')
+        ap.add_argument('-l', '--log', default=False, action='store_true', help='Create Logfile')
+
+        #  ap.add_argument('path', nargs='?')
+        #  path = os.path.normpath(options.path)
+
+        options = ap.parse_args()
+
+        ##
+        # Bind options
+        destination = options.destination
+        extension   = options.extension
+        filename    = options.filename
+        tag         = options.tag
+        xml_path    = options.xml
+
+        # Flags
+        should_update         = options.update
+        verbose               = options.verbose
+        should_create_logfile = options.log
+
+        ##
+        #  Configuring tagsnag using the provided arguments
+
+        tagsnag.set_verbose(options.verbose)
+        tagsnag.set_create_logfile(should_create_logfile)
+
+        if xml_path:
+            tagsnag.start_with_xml(xml_path)
+
+        elif tag and filename and destination and extension:
+            tagsnag.quickstart(cwd=cwd_path,
+                    tag=tag,
+                    filename=filename,
+                    extension=extension,
+                    destination=destination,
+                    update=should_update)
+        else:
+            display_help()
+
+
+
+
 
 
     except KeyboardInterrupt:

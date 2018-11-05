@@ -15,6 +15,7 @@ import subprocess
 
 from git import Git
 from git import Repo
+from git.exc import InvalidGitRepositoryError
 
 from xml.etree import ElementTree as ET
 
@@ -24,65 +25,139 @@ class Tagsnag():
 
     def __init__(self):
         super(Tagsnag, self).__init__()
-        self.initialSetup()
+        self.initial_setup()
 
-    def start(self):
-        self.loadRepositories(self.setXMLPath)
+    def start_with_xml(self, xml_path):
+        self.set_xml_path(xml_path)
+        self.load_repositories(self.xml_path)
 
         for snag in self.snags:
 
+            self.checkout(self.repositories[snag.repo_name], 'master')
+            self.pull(self.repositories[snag.repo_name])
+            self.checkout(self.repositories[snag.repo_name], snag.tag)
+            #  self.searchFileName(path=snag.local_repo_path, containing_folder=snag.containing_folder, filenames=[snag.filename], extension=snag.extension)
 
-            self.checkout(self.repositories[snag.repoName], 'master')
-            self.pull(self.repositories[snag.repoName])
-            self.checkout(self.repositories[snag.repoName], snag.tag)
-            #  self.searchFileName(path=snag.localRepoPath, containingFolder=snag.containingFolder, filenames=[snag.filename], extension=snag.extension)
-
-            foundPaths = self.search_files(filename=snag.filename, path=snag.localRepoPath, extension=snag.extension)
-            if len(foundPaths) > 0:
-                self.copyFileToDestination(path = foundPaths[0], destination = snag.destination)
-
+            found_paths = self.search_files(filename=snag.filename, path=snag.local_repo_path, extension=snag.extension)
+            if len(found_paths) > 0:
+                self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-    def initialSetup(self):
+    def find_tag(self, repo, keyword):
+        found_tag = ""
+
+        # newest tags first — tags are in arbitrary order, therefore 1. sort, 2. reverse
+        #  tags = reversed(sorted(repo.tags, key=lambda t: t.tag.tagged_date))
+        tags = repo.tags
+        self.log.debug('TAG LIST:{}'.format(tags))
+
+        # check if keyword corresponds to one tag exactly
+        if keyword in tags:
+            self.log.debug('{} correspends exactly'.format())
+            found_tag = keyword
+        else:
+            for tag in tags:
+                if keyword in str(tag):
+                    found_tag = tag
+
+        return found_tag
+
+    def quickstart(self, cwd, tag, filename, extension, destination, update=True):
+        repos = self.collect_repositories(cwd)
+
+        for repo in repos:
+
+
+            repo_path = self.get_root(repo)
+            repo_name = os.path.basename(repo_path)
+
+            print("REPOPATH {}".format(repo_path))
+            print("REPONAME {}".format(repo_name))
+
+            # shall we pull from origin/master into master first?
+            if update:
+                self.log.info('Initiating update for each repository')
+                self.checkout(repo, 'master')
+                self.pull(repo)
+
+
+            self.log.info('Searching for corresponding tag')
+            valid_tag = self.find_tag(repo, tag)
+            if valid_tag == '':
+                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+                continue
+
+            self.checkout(repo, valid_tag)
+            found_paths = self.search_files(filename=filename,
+                    path=repo_path,
+                    extension=extension)
+
+            if len(found_paths) > 0:
+                self.copy_file_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name + '.' + extension))
+
+
+    def start(self):
+        self.load_repositories(self.xml_path)
+
+        for snag in self.snags:
+
+            self.checkout(self.repositories[snag.repo_name], 'master')
+            self.pull(self.repositories[snag.repo_name])
+            self.checkout(self.repositories[snag.repo_name], snag.tag)
+            #  self.searchFileName(path=snag.local_repo_path, containing_folder=snag.containing_folder, filenames=[snag.filename], extension=snag.extension)
+
+            found_paths = self.search_files(filename=snag.filename,
+                    path=snag.local_repo_path,
+                    extension=snag.extension)
+
+            if len(found_paths) > 0:
+                self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
+
+
+
+    def initial_setup(self):
         # Instance variable init
         self.snags = []
-        self.repoNamesAndURLs = {}
+        self.repo_names_and_urls = {}
         self.repositories = {}
 
         # Advanced setup
-        self.setupLogger()
+        self.setup_logger()
 
 
-    def setupLogger(self):
+    def enable_logfile(self):
+
+        if self.log:
+            # Create filehandler
+            fh = logging.FileHandler('Tagsnag.log')
+            fh.setLevel(logging.DEBUG)
+            self.log.addHandler(fh)
+
+
+    def setup_logger(self):
         """ Creating / configuring logger instance """
 
         logging.basicConfig(level=logging.WARNING, format='%(msg)s')
         self.log = logging.getLogger('logger')
 
-        # Create filehandler
-        fh = logging.FileHandler('Tagsnag.log')
-        fh.setLevel(logging.DEBUG)
-        self.log.addHandler(fh)
-
-        # Setting logger to debug setting for now, this value will change once we have parsed to arguments
-        logging.getLogger().setLevel(logging.DEBUG)
-
-        self.log.debug('Created Logger.')
 
         ##
         # Setting up argument parser
         self.log.debug('Setting up argument parser...')
 
 
-    def setXMLPath(self, path):
+    ##
+    # XML methods
+
+    def set_xml_path(self, path):
         """ XML Path Setter """
 
         self.log.debug('Provided Path: {}'.format(path))
-        self.setXMLPath = path
-        self.generateSnagFromXMLPath(path)
+        self.xml_path = path
+        self.generate_snag_from_xml_path(path)
 
 
-    def generateSnagFromXMLPath(self, path):
+    def generate_snag_from_xml_path(self, path):
         """ Ingests XML from provided path """
 
         self.log.debug('Attempting to parse xml file: {}'.format(path))
@@ -93,91 +168,43 @@ class Tagsnag():
             url = repo.find('./url').text.strip().rstrip()
 
             # create repo name by converting to norm path, extracting basepath and cutting off before the .git extension
-            repoName = os.path.basename(os.path.normpath(url)).split('.')[0]
-            repoPath = os.path.normpath("{}/{}".format(os.path.dirname(path), repoName))
-            self.repoNamesAndURLs[repoName]=url
+            repo_name = os.path.basename(os.path.normpath(url)).split('.')[0]
+            repo_path = os.path.normpath("{}/{}".format(os.path.dirname(path), repo_name))
+            self.repo_names_and_urls[repo_name]=url
             self.log.debug('Repository: {}'.format(url))
 
             for snag in repo.findall('snag'):
                 tag = snag.find('tag').text.strip().rstrip()
-                containingFolder = snag.find('folder').text.strip().rstrip()
+                containing_folder = snag.find('folder').text.strip().rstrip()
                 filename = snag.find('filename').text.strip().rstrip()
                 extension = snag.find('extension').text.strip().rstrip()
                 destination = snag.find('destination').text.strip().rstrip()
-                destination = os.path.join(destination + containingFolder, repoName + '.' + extension)
+                destination = os.path.join(destination + containing_folder, repo_name + '.' + extension)
 
-                s = Snag(url=url, tag=tag, repoName=repoName, localRepoPath=repoPath, containingFolder=containingFolder, filename=filename, extension=extension, destination=destination)
+                s = Snag(url=url,
+                        tag=tag,
+                        repo_name=repo_name,
+                        local_repo_path=repo_path,
+                        containing_folder=containing_folder,
+                        filename=filename,
+                        extension=extension,
+                        destination=destination)
+
                 self.snags.append(s)
                 self.log.debug('Tag: {}\nFilename: {}\nextension: {}\nDestination: {}\n'.format(tag, filename, extension, destination))
 
             self.log.debug('Extracted Snags: {}'.format(self.snags))
-            self.log.info('Extracted Repositories: {}'.format(self.repoNamesAndURLs))
+            self.log.info('Extracted Repositories: {}'.format(self.repo_names_and_urls))
 
 
-    def loadRepositories(self, path):
-        """ Checks existence of repository paths and initiates clone """
-        destinationPath = os.path.dirname(path)
-        for repoName in self.repoNamesAndURLs:
-            url = self.repoNamesAndURLs[repoName]
-            repoPath = os.path.normpath("{}/{}".format(destinationPath, repoName))
-            self.log.debug(repoPath)
-            if os.path.exists(repoPath):
-                self.log.info('Repository {} exists.'.format(repoName))
+    ##
+    # Git methods
 
-                repo = Repo(repoPath)
-                assert not repo.bare
-                self.repositories[repoName] = repo
-
-            else:
-                self.log.info('Repository {} does not exist. Attempting to clone it...'.format(repoName))
-                # @todo: Implement
-                #  self.cloneRepository(destination=repoPath, url=url)
-
-
-    def checkout(self, repo, target):
-        git = repo.git
-        git.checkout(target)
-
-
-    def pull(self, repo):
-        git = repo.git
-        git.pull('origin', 'master')
-
-
-    def search_files(self, filename, path='.', extension=''):
-        extension = extension.lower()
-        foundPaths = []
-
-        for dirpath, dirnames, files in os.walk(path):
-            for file in files:
-                if extension and file.lower().endswith(extension):
-                    if filename.lower() in file.lower():
-                        foundPath = os.path.join(dirpath, file)
-                        self.log.info('Found {}'.format(foundPath))
-                        foundPaths.append(foundPath)
-                #  elif not extension:
-                    #  print(os.path.join(dirpath, file))
-        return foundPaths
-
-
-    def copyFileToDestination(self, path, destination):
-        self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
-        if os.path.exists(path):
-            if not os.path.exists(os.path.dirname(destination)):
-                os.makedirs(os.path.dirname(destination))
-            try:
-                copyfile(path, destination)
-            except IOError:
-                self.log.info(IOError.message)
-        else:
-            self.log.info('File does not exist. Aborting...')
-
-
-
-    def cloneRepository(self, destination, url):
+    def clone_repository(self, destination, url):
         """ Clones repository from url into root destination folder """
 
         self.log.info('Cloning from {}\ninto {}'.format(url, destination))
+        self.log.info('--- This feature is not implemented yet ---')
 
         #  Repo.clone_from(url, destination)
 
@@ -196,11 +223,119 @@ class Tagsnag():
             #  Repo.clone_from(url, destination)
 
 
-    def setVerbose(self, flag):
+    def checkout(self, repo, target):
+        self.log.debug('Checking out {} in {}'.format(target, self.get_root(repo)))
+        git = repo.git
+        git.checkout(target)
+
+
+    def pull(self, repo):
+        self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
+        git = repo.git
+        git.pull('origin', 'master')
+
+
+    def get_root(self, repo):
+        return repo.git.rev_parse("--show-toplevel")
+
+
+    ##
+    # Filesystem methods
+
+    def collect_repositories(self, path):
+
+        repos = []
+        self.log.debug('DETECT REPOSITORIES IN PATH: {}'.format(path))
+
+        with os.scandir(path) as dirnames:
+            for sub_dir in dirnames:
+                repo_path = os.path.join(path,  sub_dir)
+
+                if self.is_git_dir(repo_path):
+                    repos.append(Repo(repo_path))
+
+        return repos
+
+
+    def load_repositories(self, path):
+        """ Checks existence of repository paths and initiates clone """
+        destination_path = os.path.dirname(path)
+        for repo_name in self.repo_names_and_urls:
+            url = self.repo_names_and_urls[repo_name]
+            repo_path = os.path.normpath("{}/{}".format(destination_path, repo_name))
+            self.log.debug(repo_path)
+            if os.path.exists(repo_path):
+                self.log.info('Repository {} exists.'.format(repo_name))
+
+                repo = Repo(repo_path)
+                assert not repo.bare
+                self.repositories[repo_name] = repo
+
+            else:
+                self.log.info('Repository {} does not exist. Attempting to clone it...'.format(repo_name))
+                # @todo: Implement
+                #  self.clone_repository(destination=repo_path, url=url)
+
+
+    def search_files(self, filename, path='.', extension=''):
+        extension = extension.lower()
+        found_paths = []
+
+        for dirpath, dirnames, files in os.walk(path):
+            for file in files:
+                if extension and file.lower().endswith(extension):
+                    if filename.lower() in file.lower():
+                        foundPath = os.path.join(dirpath, file)
+                        self.log.info('Found {}'.format(foundPath))
+                        found_paths.append(foundPath)
+                #  elif not extension:
+                    #  print(os.path.join(dirpath, file))
+        return found_paths
+
+
+    def copy_file_to_destination(self, path, destination):
+        self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
+        if os.path.exists(path):
+            if not os.path.exists(os.path.dirname(destination)):
+                os.makedirs(os.path.dirname(destination))
+            try:
+                print("{}".format(path))
+                copyfile(path, destination)
+            except IOError:
+                self.log.info(IOError.message)
+        else:
+            self.log.info('File does not exist. Aborting...')
+
+
+
+    ##
+    # Helper methods
+
+    def is_git_dir(self, path):
+        try:
+            Repo(path)
+            return True
+        except InvalidGitRepositoryError:
+            return False
+
+
+
+    ##
+    # Setter and getter
+
+    def set_verbose(self, flag):
         """ Verbose Flag Setter """
 
         if flag:
             logging.getLogger().setLevel(logging.DEBUG)
         else:
             logging.getLogger().setLevel(logging.INFO)
+
+
+    def set_create_logfile(self, flag):
+
+        self.should_create_logfile = flag
+
+        if flag:
+            self.enable_logfile()
 
