@@ -14,6 +14,15 @@ import sys
 from argparse import ArgumentParser
 from tagsnag.tagsnag import Tagsnag
 
+
+def display_help():
+
+    with open('./docs/help', 'r') as fh:
+        help_string = fh.read()
+        print("{}".format(help_string))
+
+
+
 def main(argv):
     tagsnag = Tagsnag()
     try:

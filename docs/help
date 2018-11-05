@@ -1,0 +1,13 @@
+Insufficient arguments. Pass either a path to an xml file:
+
+python main.py --xml=<xml_path>
+
+
+or provide the following arguments:
+
+python main.py --tag=<part_of_tag> --filename=<part_of_filename> --extension=<filetype> --destination=<destination_path>
+
+
+For additional information call:
+
+python main.py --help
