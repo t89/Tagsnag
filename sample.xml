@@ -1,0 +1,26 @@
+<tagsnag>
+
+  <repository>
+    <url>SSH GIT REPO ORIGIN URL</url>
+
+    <snag>
+      <tag>
+        1.0
+      </tag>
+      <folder>
+        Containing_Folder
+      </folder>
+      <filename>
+        readme
+      </filename>
+      <extension>
+        md
+      </extension>
+      <destination>
+        /Users/Username/Destination/TagSnags
+      </destination>
+      </snag>
+
+  </repository>
+
+</tagsnag>
