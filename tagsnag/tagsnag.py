@@ -10,6 +10,7 @@ from .snag import Snag
 
 import os
 from shutil import copyfile
+from distutils.dir_util import copy_tree
 import logging
 import subprocess
 
@@ -62,26 +63,55 @@ class Tagsnag():
 
         return found_tag
 
-    def quickstart(self, cwd, tag, filename, extension, destination, update=True):
+
+    def extract_directory(self, cwd, tag, directory, destination, update=True):
+
         repos = self.collect_repositories(cwd)
 
         for repo in repos:
 
-
             repo_path = self.get_root(repo)
             repo_name = os.path.basename(repo_path)
 
-            print("REPOPATH {}".format(repo_path))
-            print("REPONAME {}".format(repo_name))
-
             # shall we pull from origin/master into master first?
             if update:
-                self.log.info('Initiating update for each repository')
+                self.log.info('Initiating update for {} repository'.format(repo_name))
                 self.checkout(repo, 'master')
                 self.pull(repo)
 
 
-            self.log.info('Searching for corresponding tag')
+            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+            valid_tag = self.find_tag(repo, tag)
+            if valid_tag == '':
+                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+                continue
+
+            self.checkout(repo, valid_tag)
+
+            found_paths = self.search_directory(directory=directory, path=repo_path)
+
+            if len(found_paths) > 0:
+                print("COPY DIS directory: {}".format(found_paths))
+                self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+
+
+    def extract_file(self, cwd, tag, filename, extension, destination, update=True):
+
+        repos = self.collect_repositories(cwd)
+
+        for repo in repos:
+
+            repo_path = self.get_root(repo)
+            repo_name = os.path.basename(repo_path)
+
+            # shall we pull from origin/master into master first?
+            if update:
+                self.log.info('Initiating update for {} repository'.format(repo_name))
+                self.checkout(repo, 'master')
+                self.pull(repo)
+
+
+            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
             valid_tag = self.find_tag(repo, tag)
             if valid_tag == '':
                 self.log.info('{} tag could not be found. Skipping repo'.format(tag))
@@ -277,11 +307,34 @@ class Tagsnag():
                 #  self.clone_repository(destination=repo_path, url=url)
 
 
+
+    def search_directory(self, directory, path='.'):
+        normalized_dirname = directory.lower()
+        found_paths = []
+
+        for dirpath, dirnames, files in os.walk(path):
+
+            # Skip .git folder
+            if ".git" in dirpath:
+                continue
+
+            if normalized_dirname in dirpath.lower():
+                self.log.info('Found Directory {}'.format(dirpath))
+                found_paths.append(dirpath)
+
+        return found_paths
+
+
     def search_files(self, filename, path='.', extension=''):
         extension = extension.lower()
         found_paths = []
 
         for dirpath, dirnames, files in os.walk(path):
+
+            # Skip .git folder
+            if ".git" in dirpath:
+                continue
+
             for file in files:
                 if extension and file.lower().endswith(extension):
                     if filename.lower() in file.lower():
@@ -295,17 +348,32 @@ class Tagsnag():
 
     def copy_file_to_destination(self, path, destination):
         self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
+
         if os.path.exists(path):
+
             if not os.path.exists(os.path.dirname(destination)):
                 os.makedirs(os.path.dirname(destination))
             try:
-                print("{}".format(path))
                 copyfile(path, destination)
             except IOError:
                 self.log.info(IOError.message)
         else:
             self.log.info('File does not exist. Aborting...')
 
+
+    def copy_directory_to_destination(self, path, destination):
+        self.log.debug('Copying from:\n{}\nto:\n{}'.format(path, destination))
+
+        if os.path.exists(path):
+
+            if not os.path.exists(os.path.dirname(destination)):
+                os.makedirs(os.path.dirname(destination))
+            try:
+                copy_tree(path, destination)
+            except IOError:
+                self.log.info(IOError.message)
+        else:
+            self.log.info('File does not exist. Aborting...')
 
 
     ##
