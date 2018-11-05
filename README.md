@@ -81,4 +81,4 @@ The framework and code is provided as-is, but if you need help or have suggestio
 
 ## I'd like to hear from you
 
-If you come up with some neat patterns for your tree, feel free to share them with me. :)
+If you have got any suggestions, please feel free to share them with me. :)
