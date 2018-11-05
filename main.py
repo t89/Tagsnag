@@ -33,13 +33,18 @@ def main(argv):
         ap = ArgumentParser()
 
         ##
-        # Optionals
+        # Optionals grouped by category
         ap.add_argument('-d', '--destination', default=cwd_path, help='Destination Path')
+
+        ap.add_argument('-e', '--extension', help='Specify a file extension')
         ap.add_argument('-f', '--filename', help='String the filename contains')
+        ap.add_argument('-dir', '--directory', help='Name of the folder you would like to extract')
+
         ap.add_argument('-t', '--tag', help='String the Tag you would like to checkout contains')
         #  ap.add_argument('-b', '--branch', help='String the Tag you would like to checkout contains')
+
         ap.add_argument('-x', '--xml', help='Provide an xml config file')
-        ap.add_argument('-e', '--extension', help='Specify a file extension')
+
 
         ##
         # Flags
@@ -57,6 +62,7 @@ def main(argv):
         destination = options.destination
         extension   = options.extension
         filename    = options.filename
+        directory   = options.directory
         tag         = options.tag
         xml_path    = options.xml
 
@@ -75,12 +81,20 @@ def main(argv):
             tagsnag.start_with_xml(xml_path)
 
         elif tag and filename and destination and extension:
-            tagsnag.quickstart(cwd=cwd_path,
+            tagsnag.extract_file(cwd=cwd_path,
                     tag=tag,
                     filename=filename,
                     extension=extension,
                     destination=destination,
                     update=should_update)
+
+        elif tag and directory and destination:
+            tagsnag.extract_directory(cwd=cwd_path,
+                    tag=tag,
+                    directory=directory,
+                    destination=destination,
+                    update=should_update)
+
         else:
             display_help()
 
