@@ -22,6 +22,9 @@ $ pip install gitpython
 
 To run `tagsnag` over all repositories in a directory enter the directory via shell and call it like so:
 
+
+## File extraction
+
 ```bash
 python <path/to/tagsnag/main.py> --tag=<tag>\
 --filename=<filename>\
@@ -29,7 +32,7 @@ python <path/to/tagsnag/main.py> --tag=<tag>\
 --destination=<destination_path>
 ```
 
-The following sample will fuzzy search for a tag containing `1.0`, check it out and search for a file of type `.md` containing the string in its name `readme`. This file will then be copied into the destination folder and be renamed to `<repository_name>.md`:
+The following sample will fuzzy search for a tag containing `1.0`, check it out and search for a file of type `.md` containing the string `readme` in its name. This file will then be copied into the destination folder and be renamed to `<repository_name>.md`:
 
 ```bash
 $ python <path>/tagsnag/main.py\
@@ -38,6 +41,17 @@ $ python <path>/tagsnag/main.py\
 --extension=md\
 --destination=./ReadmeFiles
 ```
+
+## Directory extraction
+
+Instead of a filename, you can provide a directory name to extract. Tagsnag will copy the first directory it finds matching the name starting from `root`.
+
+```bash
+python <path/to/tagsnag/main.py> --tag=<tag>\
+--directory=<directory_name>\
+--destination=<destination_path>
+```
+
 
 
 If you want to first call `git pull origin master` — after checking out `master` of course — simply append `--update` to your call. The whole set of commands can be found by calling `--help`
