@@ -24,9 +24,10 @@ def display_help():
 
 
 def main(argv):
-    tagsnag = Tagsnag()
     try:
         cwd_path = os.getcwd()
+
+        tagsnag = Tagsnag(cwd_path)
 
         ##
         # Create argument parser
@@ -77,25 +78,24 @@ def main(argv):
         tagsnag.set_verbose(options.verbose)
         tagsnag.set_create_logfile(should_create_logfile)
 
+        if should_update:
+            tagsnag.update_repos()
+
         if xml_path:
             tagsnag.start_with_xml(xml_path)
 
         elif tag and filename and destination and extension:
-            tagsnag.extract_file(cwd=cwd_path,
-                    tag=tag,
+            tagsnag.extract_file(tag=tag,
                     filename=filename,
                     extension=extension,
-                    destination=destination,
-                    update=should_update)
+                    destination=destination)
 
         elif tag and directory and destination:
-            tagsnag.extract_directory(cwd=cwd_path,
-                    tag=tag,
+            tagsnag.extract_directory(tag=tag,
                     directory=directory,
-                    destination=destination,
-                    update=should_update)
+                    destination=destination)
 
-        else:
+        elif not should_update:
             display_help()
 
 
