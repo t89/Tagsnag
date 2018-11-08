@@ -24,9 +24,12 @@ from xml.etree import ElementTree as ET
 class Tagsnag():
     """Tagsnag main class"""
 
-    def __init__(self):
+    def __init__(self, cwd):
         super(Tagsnag, self).__init__()
+
+        self.cwd = cwd
         self.initial_setup()
+
 
     def start_with_xml(self, xml_path):
         self.set_xml_path(xml_path)
@@ -42,6 +45,21 @@ class Tagsnag():
             found_paths = self.search_files(filename=snag.filename, path=snag.local_repo_path, extension=snag.extension)
             if len(found_paths) > 0:
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
+
+
+    def update_repos(self):
+
+        if not self.repos:
+            self.repos = self.collect_repositories(self.cwd)
+
+        for repo in self.repos:
+
+            repo_path = self.get_root(repo)
+            repo_name = os.path.basename(repo_path)
+
+            self.log.info('Initiating update for {} repository'.format(repo_name))
+            self.checkout(repo, 'master')
+            self.pull(repo)
 
 
     def find_tag(self, repo, keyword):
@@ -64,21 +82,15 @@ class Tagsnag():
         return found_tag
 
 
-    def extract_directory(self, cwd, tag, directory, destination, update=True):
+    def extract_directory(self, tag, directory, destination):
 
-        repos = self.collect_repositories(cwd)
+        if not self.repos:
+            self.repos = self.collect_repositories(self.cwd)
 
-        for repo in repos:
+        for repo in self.repos:
 
             repo_path = self.get_root(repo)
             repo_name = os.path.basename(repo_path)
-
-            # shall we pull from origin/master into master first?
-            if update:
-                self.log.info('Initiating update for {} repository'.format(repo_name))
-                self.checkout(repo, 'master')
-                self.pull(repo)
-
 
             self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
             valid_tag = self.find_tag(repo, tag)
@@ -94,21 +106,15 @@ class Tagsnag():
                 self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
 
 
-    def extract_file(self, cwd, tag, filename, extension, destination, update=True):
+    def extract_file(self, tag, filename, extension, destination):
 
-        repos = self.collect_repositories(cwd)
+        if not self.repos:
+            self.repos = self.collect_repositories(self.cwd)
 
-        for repo in repos:
+        for repo in self.repos:
 
             repo_path = self.get_root(repo)
             repo_name = os.path.basename(repo_path)
-
-            # shall we pull from origin/master into master first?
-            if update:
-                self.log.info('Initiating update for {} repository'.format(repo_name))
-                self.checkout(repo, 'master')
-                self.pull(repo)
-
 
             self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
             valid_tag = self.find_tag(repo, tag)
@@ -143,10 +149,10 @@ class Tagsnag():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-
     def initial_setup(self):
         # Instance variable init
         self.snags = []
+        self.repos = []
         self.repo_names_and_urls = {}
         self.repositories = {}
 
