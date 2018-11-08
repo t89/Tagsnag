@@ -20,8 +20,15 @@ $ pip install gitpython
 
 ## Run
 
-To run `tagsnag` over all repositories in a directory enter the directory via shell and call it like so:
+To run `tagsnag` over all repositories in a directory enter the directory via shell. The whole set of commands can be found by calling `--help`.
 
+## Updating repositories
+
+Run `git checkout master && git pull origin master` on all repositories:
+
+```bash
+python <path/to/tagsnag/main.py> --update
+```
 
 ## File extraction
 
@@ -51,10 +58,6 @@ python <path/to/tagsnag/main.py> --tag=<tag>\
 --directory=<directory_name>\
 --destination=<destination_path>
 ```
-
-
-
-If you want to first call `git pull origin master` — after checking out `master` of course — simply append `--update` to your call. The whole set of commands can be found by calling `--help`
 
 
 ### Run with XML file
