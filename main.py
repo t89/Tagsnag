@@ -15,12 +15,15 @@ from argparse import ArgumentParser
 from tagsnag.tagsnag import Tagsnag
 
 
-def display_help():
+def get_script_path():
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
 
-    with open('./docs/help', 'r') as fh:
+
+def display_help():
+    help_path = os.path.join(get_script_path(), 'docs/help')
+    with open(help_path, 'r') as fh:
         help_string = fh.read()
         print("{}".format(help_string))
-
 
 
 def main(argv):
@@ -79,19 +82,19 @@ def main(argv):
         tagsnag.set_create_logfile(should_create_logfile)
 
         if should_update:
-            tagsnag.update_repos()
+            tagsnag.update_all_repos()
 
         if xml_path:
             tagsnag.start_with_xml(xml_path)
 
         elif tag and filename and destination and extension:
-            tagsnag.extract_file(tag=tag,
+            tagsnag.extract_file_from_all_repos(tag=tag,
                     filename=filename,
                     extension=extension,
                     destination=destination)
 
         elif tag and directory and destination:
-            tagsnag.extract_directory(tag=tag,
+            tagsnag.extract_directory_from_all_repos(tag=tag,
                     directory=directory,
                     destination=destination)
 

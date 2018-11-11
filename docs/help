@@ -1,13 +1,18 @@
-Insufficient arguments. Pass either a path to an xml file:
+Insufficient arguments. For a full description run:
 
-python main.py --xml=<xml_path>
+python main.py --help
 
 
-or provide the following arguments:
+To extract a directory pass the following set of arguments:
+
+python main.py --tag=<part_of_tag> --directory=<part_of_dirname> --destination=<destination_path>
+
+
+To extract a file pass the following set of arguments:
 
 python main.py --tag=<part_of_tag> --filename=<part_of_filename> --extension=<filetype> --destination=<destination_path>
 
 
-For additional information call:
+Insufficient arguments. Pass either a path to an xml file:
 
-python main.py --help
+python main.py --xml=<xml_path>

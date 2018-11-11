@@ -13,6 +13,8 @@ from shutil import copyfile
 from distutils.dir_util import copy_tree
 import logging
 import subprocess
+from concurrent.futures.thread import ThreadPoolExecutor
+import re
 
 from git import Git
 from git import Repo
@@ -47,22 +49,34 @@ class Tagsnag():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-    def update_repos(self):
+    def update_all_repos(self):
+        """Initiate threaded updates for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
+        max_worker_count = self.available_cpu_count()
+        self.log.info('Initiating repo update on {} threads.'.format(max_worker_count))
 
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
+        with ThreadPoolExecutor(max_workers=max_worker_count) as executor:
+            for repo in self.repos:
+                executor.submit(self.update_repo, repo)
 
-            self.log.info('Initiating update for {} repository'.format(repo_name))
-            self.checkout(repo, 'master')
-            self.pull(repo)
+
+    def update_repo(self, repo):
+        """Update provided repository"""
+
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
+
+        self.log.info('Initiating update for {} repository'.format(repo_name))
+        self.checkout(repo, 'master')
+        self.pull(repo)
 
 
     def find_tag(self, repo, keyword):
+        """Attempt to find tag in provided repo. Fallback to fuzzyfind tag"""
+
         found_tag = ""
 
         # newest tags first — tags are in arbitrary order, therefore 1. sort, 2. reverse
@@ -82,53 +96,73 @@ class Tagsnag():
         return found_tag
 
 
-    def extract_directory(self, tag, directory, destination):
+    def extract_directory_from_all_repos(self, tag, directory, destination):
+        """Initiate threaded directory extraction for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
+        max_worker_count = self.available_cpu_count()
+        self.log.info('Initiating directory extraction on {} threads.'.format(max_worker_count))
 
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
-
-            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
-            valid_tag = self.find_tag(repo, tag)
-            if valid_tag == '':
-                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
-                continue
-
-            self.checkout(repo, valid_tag)
-
-            found_paths = self.search_directory(directory=directory, path=repo_path)
-
-            if len(found_paths) > 0:
-                self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+        with ThreadPoolExecutor(max_workers=max_worker_count) as executor:
+            for repo in self.repos:
+                executor.submit(self.extract_directory, repo, tag, directory, destination)
 
 
-    def extract_file(self, tag, filename, extension, destination):
+    def extract_directory(self, repo, tag, directory, destination):
+        """Attempt to extract described directory from provided repo"""
+
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
+
+        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        valid_tag = self.find_tag(repo, tag)
+        if valid_tag == '':
+            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            return
+
+        self.checkout(repo, valid_tag)
+
+        found_paths = self.search_directory(directory=directory, path=repo_path)
+
+        if len(found_paths) > 0:
+            self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+
+
+    def extract_file_from_all_repos(self, tag, filename, extension, destination):
+        """Initiate threaded file extraction for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
+        max_worker_count = self.available_cpu_count()
+        self.log.info('Initiating file extraction on {} threads.'.format(max_worker_count))
 
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
+        with ThreadPoolExecutor(max_workers=max_worker_count) as executor:
+            for repo in self.repos:
+                executor.submit(self.extract_file, repo, tag, filename, extension, destination)
 
-            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
-            valid_tag = self.find_tag(repo, tag)
-            if valid_tag == '':
-                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
-                continue
 
-            self.checkout(repo, valid_tag)
-            found_paths = self.search_files(filename=filename,
-                    path=repo_path,
-                    extension=extension)
+    def extract_file(self, repo, tag, filename, extension, destination):
+        """Attempt to extract described file from provided repo"""
 
-            if len(found_paths) > 0:
-                self.copy_file_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name + '.' + extension))
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
+
+        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        valid_tag = self.find_tag(repo, tag)
+        if valid_tag == '':
+            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            return
+
+        self.checkout(repo, valid_tag)
+        found_paths = self.search_files(filename=filename,
+                path=repo_path,
+                extension=extension)
+
+        if len(found_paths) > 0:
+            self.copy_file_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name + '.' + extension))
 
 
     def start(self):
@@ -391,6 +425,118 @@ class Tagsnag():
         except InvalidGitRepositoryError:
             return False
 
+
+    def available_cpu_count(self):
+        """ Number of available virtual or physical CPUs on this system, i.e.
+        user/real as output by time(1) when called with an optimally scaling
+        userspace-only program"""
+
+        # cpuset
+        # cpuset may restrict the number of *available* processors
+        try:
+            m = re.search(r'(?m)^Cpus_allowed:\s*(.*)$',
+                        open('/proc/self/status').read())
+            if m:
+                res = bin(int(m.group(1).replace(',', ''), 16)).count('1')
+                if res > 0:
+                    return res
+        except IOError:
+            pass
+
+        # Python 2.6+
+        try:
+            import multiprocessing
+            return multiprocessing.cpu_count()
+        except (ImportError, NotImplementedError):
+            pass
+
+        # https://github.com/giampaolo/psutil
+        try:
+            import psutil
+            return psutil.cpu_count()   # psutil.NUM_CPUS on old versions
+        except (ImportError, AttributeError):
+            pass
+
+        # POSIX
+        try:
+            res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
+
+            if res > 0:
+                return res
+        except (AttributeError, ValueError):
+            pass
+
+        # Windows
+        try:
+            res = int(os.environ['NUMBER_OF_PROCESSORS'])
+
+            if res > 0:
+                return res
+        except (KeyError, ValueError):
+            pass
+
+        # jython
+        try:
+            from java.lang import Runtime
+            runtime = Runtime.getRuntime()
+            res = runtime.availableProcessors()
+            if res > 0:
+                return res
+        except ImportError:
+            pass
+
+        # BSD
+        try:
+            sysctl = subprocess.Popen(['sysctl', '-n', 'hw.ncpu'],
+                                    stdout=subprocess.PIPE)
+            scStdout = sysctl.communicate()[0]
+            res = int(scStdout)
+
+            if res > 0:
+                return res
+        except (OSError, ValueError):
+            pass
+
+        # Linux
+        try:
+            res = open('/proc/cpuinfo').read().count('processor\t:')
+
+            if res > 0:
+                return res
+        except IOError:
+            pass
+
+        # Solaris
+        try:
+            pseudoDevices = os.listdir('/devices/pseudo/')
+            res = 0
+            for pd in pseudoDevices:
+                if re.match(r'^cpuid@[0-9]+$', pd):
+                    res += 1
+
+            if res > 0:
+                return res
+        except OSError:
+            pass
+
+        # Other UNIXes (heuristic)
+        try:
+            try:
+                dmesg = open('/var/run/dmesg.boot').read()
+            except IOError:
+                dmesgProcess = subprocess.Popen(['dmesg'], stdout=subprocess.PIPE)
+                dmesg = dmesgProcess.communicate()[0]
+
+            res = 0
+            while '\ncpu' + str(res) + ':' in dmesg:
+                res += 1
+
+            if res > 0:
+                return res
+        except OSError:
+            pass
+
+        raise Exception('Can not determine number of CPUs on this system')
 
 
     ##
