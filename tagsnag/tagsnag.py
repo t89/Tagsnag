@@ -119,7 +119,7 @@ class Tagsnag():
         self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
         valid_tag = self.find_tag(repo, tag)
         if valid_tag == '':
-            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            self.log.info('{} tag could not be found in {}. Skipping repo'.format(tag, repo_name))
             return
 
         self.checkout(repo, valid_tag)
@@ -302,6 +302,7 @@ class Tagsnag():
         self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
         git = repo.git
         git.pull('origin', 'master')
+        git.pull('origin', '--tags')
 
 
     def get_root(self, repo):
