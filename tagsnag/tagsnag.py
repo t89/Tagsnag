@@ -302,6 +302,7 @@ class Tagsnag():
         self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
         git = repo.git
         git.pull('origin', 'master')
+        git.pull('origin', '--tags')
 
 
     def get_root(self, repo):
