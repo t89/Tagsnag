@@ -13,6 +13,7 @@ from shutil import copyfile
 from distutils.dir_util import copy_tree
 import logging
 import subprocess
+from concurrent.futures.thread import ThreadPoolExecutor
 
 from git import Git
 from git import Repo
@@ -47,22 +48,31 @@ class Tagsnag():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-    def update_repos(self):
+    def update_all_repos(self):
+        """Initiate threaded updates for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            for repo in self.repos:
+                executor.submit(self.update_repo, repo)
 
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
 
-            self.log.info('Initiating update for {} repository'.format(repo_name))
-            self.checkout(repo, 'master')
-            self.pull(repo)
+    def update_repo(self, repo):
+        """Update provided repository"""
+
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
+
+        self.log.info('Initiating update for {} repository'.format(repo_name))
+        self.checkout(repo, 'master')
+        self.pull(repo)
 
 
     def find_tag(self, repo, keyword):
+        """Attempt to find tag in provided repo. Fallback to fuzzyfind tag"""
+
         found_tag = ""
 
         # newest tags first — tags are in arbitrary order, therefore 1. sort, 2. reverse
@@ -82,53 +92,67 @@ class Tagsnag():
         return found_tag
 
 
-    def extract_directory(self, tag, directory, destination):
+    def extract_directory_from_all_repos(self, tag, directory, destination):
+        """Initiate threaded directory extraction for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
-
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
-
-            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
-            valid_tag = self.find_tag(repo, tag)
-            if valid_tag == '':
-                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
-                continue
-
-            self.checkout(repo, valid_tag)
-
-            found_paths = self.search_directory(directory=directory, path=repo_path)
-
-            if len(found_paths) > 0:
-                self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            for repo in self.repos:
+                executor.submit(self.extract_directory, repo, tag, directory, destination)
 
 
-    def extract_file(self, tag, filename, extension, destination):
+    def extract_directory(self, repo, tag, directory, destination):
+        """Attempt to extract described directory from provided repo"""
+
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
+
+        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        valid_tag = self.find_tag(repo, tag)
+        if valid_tag == '':
+            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            return
+
+        self.checkout(repo, valid_tag)
+
+        found_paths = self.search_directory(directory=directory, path=repo_path)
+
+        if len(found_paths) > 0:
+            self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+
+
+    def extract_file_from_all_repos(self, tag, filename, extension, destination):
+        """Initiate threaded file extraction for all repositories in working directory"""
 
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        for repo in self.repos:
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            for repo in self.repos:
+                executor.submit(self.extract_file, repo, tag, filename, extension, destination)
 
-            repo_path = self.get_root(repo)
-            repo_name = os.path.basename(repo_path)
 
-            self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
-            valid_tag = self.find_tag(repo, tag)
-            if valid_tag == '':
-                self.log.info('{} tag could not be found. Skipping repo'.format(tag))
-                continue
+    def extract_file(self, repo, tag, filename, extension, destination):
+        """Attempt to extract described file from provided repo"""
 
-            self.checkout(repo, valid_tag)
-            found_paths = self.search_files(filename=filename,
-                    path=repo_path,
-                    extension=extension)
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
 
-            if len(found_paths) > 0:
-                self.copy_file_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name + '.' + extension))
+        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        valid_tag = self.find_tag(repo, tag)
+        if valid_tag == '':
+            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            return
+
+        self.checkout(repo, valid_tag)
+        found_paths = self.search_files(filename=filename,
+                path=repo_path,
+                extension=extension)
+
+        if len(found_paths) > 0:
+            self.copy_file_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name + '.' + extension))
 
 
     def start(self):

@@ -79,19 +79,19 @@ def main(argv):
         tagsnag.set_create_logfile(should_create_logfile)
 
         if should_update:
-            tagsnag.update_repos()
+            tagsnag.update_all_repos()
 
         if xml_path:
             tagsnag.start_with_xml(xml_path)
 
         elif tag and filename and destination and extension:
-            tagsnag.extract_file(tag=tag,
+            tagsnag.extract_file_from_all_repos(tag=tag,
                     filename=filename,
                     extension=extension,
                     destination=destination)
 
         elif tag and directory and destination:
-            tagsnag.extract_directory(tag=tag,
+            tagsnag.extract_directory_from_all_repos(tag=tag,
                     directory=directory,
                     destination=destination)
 
