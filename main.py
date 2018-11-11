@@ -15,12 +15,15 @@ from argparse import ArgumentParser
 from tagsnag.tagsnag import Tagsnag
 
 
-def display_help():
+def get_script_path():
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
 
-    with open('./docs/help', 'r') as fh:
+
+def display_help():
+    help_path = os.path.join(get_script_path(), 'docs/help')
+    with open(help_path, 'r') as fh:
         help_string = fh.read()
         print("{}".format(help_string))
-
 
 
 def main(argv):
