@@ -49,7 +49,7 @@ class Tagsnag():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-    def update_all_repos(self, should_prune=False):
+    def update_all_repos(self):
         """Initiate threaded updates for all repositories in working directory"""
 
         if not self.repos:
@@ -60,18 +60,34 @@ class Tagsnag():
 
         with ThreadPoolExecutor(max_workers=max_worker_count) as executor:
             for repo in self.repos:
-                executor.submit(self.update_repo, repo, should_prune=should_prune)
+                executor.submit(self.update_repo, repo)
 
 
-    def update_repo(self, repo, should_prune=False):
+    def update_repo(self, repo):
         """Update provided repository"""
 
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
 
-        self.log.info('Initiating update for {} repository'.format(repo_name))
+        self.log.info('[{}]: Checking status.'.format(repo_name))
+
+        if self.is_dirty(repo):
+            self.log.info('  [{}]: Dirty repository detected.'.format(repo_name))
+            if self.should_autostash:
+                self.log.info('    [{}]: Autostash enabled. Stashing...'.format(repo_name))
+                self.stash_repo(repo)
+
+            else:
+                self.log.info('    [{}]: Autostash disabled. Skipping...'.format(repo_name))
+                return
+        else:
+            self.log.debug('  [{}]: Status clean.'.format(repo_name))
+
+
+        self.log.info('[{}]: Initiating update...'.format(repo_name))
+
         self.checkout(repo, 'master')
-        self.pull(repo, should_prune=should_prune)
+        self.pull(repo)
 
 
     def find_tag(self, repo, keyword):
@@ -116,11 +132,15 @@ class Tagsnag():
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
 
-        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        self.log.info('[{}]: Searching for corresponding tag for keyword: {}'.format(repo_name, tag))
         valid_tag = self.find_tag(repo, tag)
+
         if valid_tag == '':
-            self.log.info('{} tag could not be found in {}. Skipping repo'.format(tag, repo_name))
+            self.log.info('  [{}]: {} tag could not be found. Skipping repo'.format(repo_name, tag))
             return
+        else:
+            self.log.info('  [{}]: Valid Tag found: {} -> {}'.format(repo_name, tag, valid_tag))
+
 
         self.checkout(repo, valid_tag)
 
@@ -150,10 +170,10 @@ class Tagsnag():
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
 
-        self.log.info('Searching for corresponding tag for keyword: {}'.format(tag))
+        self.log.info('[{}]: Searching for corresponding tag for keyword: {}'.format(repo_name, tag))
         valid_tag = self.find_tag(repo, tag)
         if valid_tag == '':
-            self.log.info('{} tag could not be found. Skipping repo'.format(tag))
+            self.log.info('[{}]: <{}> tag could not be found. Skipping repo'.format(repo_name, tag))
             return
 
         self.checkout(repo, valid_tag)
@@ -189,6 +209,13 @@ class Tagsnag():
         self.repos = []
         self.repo_names_and_urls = {}
         self.repositories = {}
+
+        ##
+        # Flags
+        self.should_prune = False
+        self.should_autostash = False
+        self.verbose = False
+        self.should_create_logfile = False
 
         # Advanced setup
         self.setup_logger()
@@ -293,16 +320,20 @@ class Tagsnag():
 
 
     def checkout(self, repo, target):
+        """ Checkout provided target within given repository """
+
         self.log.debug('Checking out {} in {}'.format(target, self.get_root(repo)))
         git = repo.git
         git.checkout(target)
 
 
-    def pull(self, repo, should_prune=False):
+    def pull(self, repo):
+        """ Pull origin / master for provided repository """
+
         self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
         git = repo.git
 
-        if should_prune:
+        if self.should_prune:
             git.pull('origin', 'master')
             git.pull('origin', '--tags')
 
@@ -310,6 +341,30 @@ class Tagsnag():
             git.pull('origin', 'master', '--prune')
             git.pull('origin', '--tags', '--prune')
 
+
+    def is_dirty(self, repo):
+        """ Returns True if repository status is dirty """
+
+        diff_result = repo.index.diff(None)
+
+        if len(diff_result) > 0:
+            return True
+        else:
+            return False
+
+
+    def stash_repo(self, repo):
+        """ Run stash within provided repository """
+
+        git = repo.git
+        git.stash()
+
+
+    def stash_pop_repo(self, repo):
+        """ Run stash within provided repository """
+
+        git = repo.git
+        git.stash('pop')
 
 
     def get_root(self, repo):
@@ -342,17 +397,16 @@ class Tagsnag():
             repo_path = os.path.normpath("{}/{}".format(destination_path, repo_name))
             self.log.debug(repo_path)
             if os.path.exists(repo_path):
-                self.log.info('Repository {} exists.'.format(repo_name))
+                self.log.info('[{}]: Repository exists.'.format(repo_name))
 
                 repo = Repo(repo_path)
                 assert not repo.bare
                 self.repositories[repo_name] = repo
 
             else:
-                self.log.info('Repository {} does not exist. Attempting to clone it...'.format(repo_name))
+                self.log.info('[{}]: Repository does not exist. Attempting to clone it...'.format(repo_name))
                 # @todo: Implement
                 #  self.clone_repository(destination=repo_path, url=url)
-
 
 
     def search_directory(self, directory, path='.'):
@@ -427,11 +481,20 @@ class Tagsnag():
     # Helper methods
 
     def is_git_dir(self, path):
+        """ Returns True if path contains valid Git repo """
+
         try:
             Repo(path)
             return True
         except InvalidGitRepositoryError:
             return False
+
+
+    def get_repo_name(self, repo):
+        """ Returns name of provided repo """
+
+        repo_path = self.get_root(repo)
+        repo_name = os.path.basename(repo_path)
 
 
     def available_cpu_count(self):
@@ -560,7 +623,20 @@ class Tagsnag():
             logging.getLogger().setLevel(logging.INFO)
 
 
+    def set_should_prune(self, flag):
+        """ Should Prune Setter """
+
+        self.should_prune = flag
+
+
+    def set_should_autostash(self, flag):
+        """ Autostash Setter """
+
+        self.should_autostash = flag
+
+
     def set_create_logfile(self, flag):
+        """ Create Logfile Setter """
 
         self.should_create_logfile = flag
 
