@@ -49,7 +49,7 @@ class Tagsnag():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
-    def update_all_repos(self):
+    def update_all_repos(self, should_prune=False):
         """Initiate threaded updates for all repositories in working directory"""
 
         if not self.repos:
@@ -60,10 +60,10 @@ class Tagsnag():
 
         with ThreadPoolExecutor(max_workers=max_worker_count) as executor:
             for repo in self.repos:
-                executor.submit(self.update_repo, repo)
+                executor.submit(self.update_repo, repo, should_prune=should_prune)
 
 
-    def update_repo(self, repo):
+    def update_repo(self, repo, should_prune=False):
         """Update provided repository"""
 
         repo_path = self.get_root(repo)
@@ -71,7 +71,7 @@ class Tagsnag():
 
         self.log.info('Initiating update for {} repository'.format(repo_name))
         self.checkout(repo, 'master')
-        self.pull(repo)
+        self.pull(repo, should_prune=should_prune)
 
 
     def find_tag(self, repo, keyword):
@@ -298,11 +298,18 @@ class Tagsnag():
         git.checkout(target)
 
 
-    def pull(self, repo):
+    def pull(self, repo, should_prune=False):
         self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
         git = repo.git
-        git.pull('origin', 'master')
-        git.pull('origin', '--tags')
+
+        if should_prune:
+            git.pull('origin', 'master')
+            git.pull('origin', '--tags')
+
+        else:
+            git.pull('origin', 'master', '--prune')
+            git.pull('origin', '--tags', '--prune')
+
 
 
     def get_root(self, repo):
@@ -545,6 +552,7 @@ class Tagsnag():
 
     def set_verbose(self, flag):
         """ Verbose Flag Setter """
+        self.verbose = flag
 
         if flag:
             logging.getLogger().setLevel(logging.DEBUG)

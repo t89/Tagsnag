@@ -9,7 +9,7 @@ with open('LICENSE', 'r') as fh:
 
 setuptools.setup(
     name                          = 'Tagsnatch',
-    version                       = '0.4.0',
+    version                       = '0.5.0',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
     description                   = 'Search files over multiple Git repos, and extract a certain version',
