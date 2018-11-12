@@ -552,6 +552,7 @@ class Tagsnag():
 
     def set_verbose(self, flag):
         """ Verbose Flag Setter """
+        self.verbose = flag
 
         if flag:
             logging.getLogger().setLevel(logging.DEBUG)
