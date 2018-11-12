@@ -45,7 +45,6 @@ def main(argv):
         ap.add_argument('-dir', '--directory', help='Name of the folder you would like to extract')
 
         ap.add_argument('-t', '--tag', help='String the Tag you would like to checkout contains')
-        #  ap.add_argument('-b', '--branch', help='String the Tag you would like to checkout contains')
 
         ap.add_argument('-x', '--xml', help='Provide an xml config file')
 
@@ -54,12 +53,12 @@ def main(argv):
         # Flags
         ap.add_argument('-l', '--log', default=False, action='store_true', help='Create Logfile')
         ap.add_argument('-p', '--prune', default=False, action='store_true', help='Prune on pull')
+        ap.add_argument('-s', '--autostash', default=False, action='store_true', help='Enable autostash before checking out dirty directory')
         ap.add_argument('-u', '--update', default=False, action='store_true', help='Pull from origin/master into master prior to checkout')
         ap.add_argument('-v', '--verbose', default=False, action='store_true', help='Increase verbosity')
 
-        #  ap.add_argument('path', nargs='?')
-        #  path = os.path.normpath(options.path)
-
+        ##
+        # Validate / Parse provided arguments
         options = ap.parse_args()
 
         ##
@@ -72,6 +71,7 @@ def main(argv):
         xml_path    = options.xml
 
         # Flags
+        should_autostash      = options.autostash
         should_create_logfile = options.log
         should_prune          = options.prune
         should_update         = options.update
@@ -79,12 +79,13 @@ def main(argv):
 
         ##
         #  Configuring tagsnag using the provided arguments
-
-        tagsnag.set_verbose(options.verbose)
+        tagsnag.set_verbose(verbose)
+        tagsnag.set_should_autostash(should_autostash)
+        tagsnag.set_should_prune(should_prune)
         tagsnag.set_create_logfile(should_create_logfile)
 
         if should_update:
-            tagsnag.update_all_repos(should_prune=should_prune)
+            tagsnag.update_all_repos()
 
         if xml_path:
             tagsnag.start_with_xml(xml_path)
@@ -102,10 +103,6 @@ def main(argv):
 
         elif not should_update:
             display_help()
-
-
-
-
 
 
     except KeyboardInterrupt:
