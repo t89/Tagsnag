@@ -16,7 +16,7 @@ from tagsnag.tagsnag import Tagsnag
 
 
 def get_script_path():
-    return os.path.dirname(os.path.realpath(sys.argv[0]))
+    return os.path.dirname(__file__)
 
 
 def display_help():
