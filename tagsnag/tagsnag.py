@@ -335,8 +335,9 @@ class Tagsnag():
 
     def pull(self, repo):
         """ Pull origin / master for provided repository """
+        repo_name = self.get_repo_name(repo)
 
-        self.log.debug('Pulling origin/master {}'.format(self.get_root(repo)))
+        self.log.debug('  [{}]: Pulling origin/master'.format(repo_name))
         git = repo.git
 
         if self.should_prune:
