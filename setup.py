@@ -9,7 +9,7 @@ with open('LICENSE', 'r') as fh:
 
 setuptools.setup(
     name                          = 'Tagsnag',
-    version                       = '0.6.3',
+    version                       = '0.7.0',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
     description                   = 'Search files over multiple Git repos, and extract a certain version',
