@@ -98,9 +98,7 @@ class Tagsnag():
         # newest tags first — tags are in arbitrary order, therefore 1. sort, 2. reverse
         #  tags = reversed(sorted(repo.tags, key=lambda t: t.tag.tagged_date))
         tags = repo.tags
-        print("{}".format("TESTTEST"))
         repo_name = self.get_repo_name(repo)
-        print("{}".format("PAST"))
 
         self.log.info('[{}]: Searching for tag: <{}>'.format(repo_name, keyword))
 
