@@ -8,7 +8,7 @@ with open('LICENSE', 'r') as fh:
     license = fh.read()
 
 setuptools.setup(
-    name                          = 'Tagsnatch',
+    name                          = 'Tagsnag',
     version                       = '0.6.2',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
