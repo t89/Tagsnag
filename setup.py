@@ -18,6 +18,9 @@ setuptools.setup(
     license                       = license,
     url                           = 'https://github.com/beulenyoshi/tagsnag',
     packages                      = setuptools.find_packages(exclude = ('tests', 'docs')),
+    entry_points                  = {
+                                        'console_scripts': ['tagsnag=:main'],
+                                    },
     install_requires              = [
                                         'gitpython',
                                     ],
