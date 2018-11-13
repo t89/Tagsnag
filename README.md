@@ -3,7 +3,16 @@
 Update master, checkout a version and extract a file from this specific version over multiple Git repositories in one CLI call.
 
 
-## Prerequisites
+## Installation
+
+### Install using pip:
+
+```bash
+$ pip install Tagsnag
+```
+
+
+### Manual Installation
 
 Tagsnag uses `Python 3.7` and requires `Gitpython` to be installed. You can install it using the provided `Makefile`:
 
@@ -27,25 +36,25 @@ To run `tagsnag` over all repositories in a directory enter the directory via sh
 Run `git checkout master && git pull origin master` on all repositories:
 
 ```bash
-python <path/to/tagsnag/main.py> --update
+$ tagsnag --update
 ```
 
 ## File extraction
 
 ```bash
-python <path/to/tagsnag/main.py> --tag=<tag>\
---filename=<filename>\
---extension=<filetype>\
+$ tagsnag --tag=<tag>            \
+--filename=<filename>            \
+--extension=<filetype>           \
 --destination=<destination_path>
 ```
 
 The following sample will fuzzy search for a tag containing `1.0`, check it out and search for a file of type `.md` containing the string `readme` in its name. This file will then be copied into the destination folder and be renamed to `<repository_name>.md`:
 
 ```bash
-$ python <path>/tagsnag/main.py\
---tag=1.0\
---filename=readme\
---extension=md\
+$ tagsnag                   \
+--tag=1.0                   \
+--filename=readme           \
+--extension=md              \
 --destination=./ReadmeFiles
 ```
 
@@ -54,8 +63,8 @@ $ python <path>/tagsnag/main.py\
 Instead of a filename, you can provide a directory name to extract. Tagsnag will copy the first directory it finds matching the name starting from `root`.
 
 ```bash
-python <path/to/tagsnag/main.py> --tag=<tag>\
---directory=<directory_name>\
+$ tagsnag --tag=<tag>              \
+--directory=<directory_name>     \
 --destination=<destination_path>
 ```
 
@@ -65,7 +74,7 @@ python <path/to/tagsnag/main.py> --tag=<tag>\
 - For more configurability you can put an `xml` file into the folder containing the repos and run it:
 
 ```bash
-$ python <path/to/tagsnag/main.py> --xml=<path/of/xml_file>
+$ tagsnag --xml=<path/of/xml_file>
 ```
 
 
