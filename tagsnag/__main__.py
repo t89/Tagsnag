@@ -1,7 +1,7 @@
 ##
 #!/usr/bin/python
 #
-#  main.py
+#  __main__.py
 #  Tagsnag
 #
 #  Created by Thomas Johannesmeyer (thomas@geeky.gent) on 31.10.2018.
@@ -70,6 +70,7 @@ def main():
         tag         = options.tag
         xml_path    = options.xml
 
+        ##
         # Flags
         should_autostash      = options.autostash
         should_create_logfile = options.log

@@ -9,7 +9,7 @@ with open('LICENSE', 'r') as fh:
 
 setuptools.setup(
     name                          = 'Tagsnag',
-    version                       = '0.7.2',
+    version                       = '0.8.0',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
     description                   = 'Search files over multiple Git repos, and extract a certain version',
@@ -19,7 +19,7 @@ setuptools.setup(
     url                           = 'https://github.com/beulenyoshi/tagsnag',
     packages                      = setuptools.find_packages(exclude = ('tests', 'docs')),
     entry_points                  = {
-                                        'console_scripts': ['tagsnag=tagsnag:main'],
+                                        'console_scripts': ['tagsnag=tagsnag.__main__:main'],
                                     },
     install_requires              = [
                                         'gitpython',
