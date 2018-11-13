@@ -98,16 +98,24 @@ class Tagsnag():
         # newest tags first — tags are in arbitrary order, therefore 1. sort, 2. reverse
         #  tags = reversed(sorted(repo.tags, key=lambda t: t.tag.tagged_date))
         tags = repo.tags
-        self.log.debug('TAG LIST:{}'.format(tags))
+        print("{}".format("TESTTEST"))
+        repo_name = self.get_repo_name(repo)
+        print("{}".format("PAST"))
+
+        self.log.info('[{}]: Searching for tag: <{}>'.format(repo_name, keyword))
+
+        self.log.debug('  [{}]: List of tags:{}'.format(repo_name, tags))
 
         # check if keyword corresponds to one tag exactly
         if keyword in tags:
-            self.log.debug('{} correspends exactly'.format())
+            self.log.debug('  [{}]: <{}> matched exactly'.format(repo_name, keyword))
             found_tag = keyword
         else:
+            self.log.debug('  [{}]: Couldn\'t find {}. Fuzzy search... '.format(repo_name, keyword))
             for tag in tags:
                 if keyword in str(tag):
                     found_tag = tag
+                    self.log.debug('    [{}]: Fuzzy matched {} > <{}>.'.format(repo_name, keyword, found_tag))
 
         return found_tag
 
@@ -132,11 +140,10 @@ class Tagsnag():
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
 
-        self.log.info('[{}]: Searching for corresponding tag for keyword: {}'.format(repo_name, tag))
         valid_tag = self.find_tag(repo, tag)
 
         if valid_tag == '':
-            self.log.info('  [{}]: {} tag could not be found. Skipping repo'.format(repo_name, tag))
+            self.log.info('  [{}]: <{}> tag could not be found. Skipping repo'.format(repo_name, tag))
             return
         else:
             self.log.info('  [{}]: Valid Tag found: {} -> {}'.format(repo_name, tag, valid_tag))
@@ -170,11 +177,12 @@ class Tagsnag():
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
 
-        self.log.info('[{}]: Searching for corresponding tag for keyword: {}'.format(repo_name, tag))
         valid_tag = self.find_tag(repo, tag)
         if valid_tag == '':
-            self.log.info('[{}]: <{}> tag could not be found. Skipping repo'.format(repo_name, tag))
+            self.log.info('  [{}]: <{}> tag could not be found. Skipping repo'.format(repo_name, tag))
             return
+        else:
+            self.log.info('  [{}]: Valid Tag found: {} -> {}'.format(repo_name, tag, valid_tag))
 
         self.checkout(repo, valid_tag)
         found_paths = self.search_files(filename=filename,
@@ -495,6 +503,7 @@ class Tagsnag():
 
         repo_path = self.get_root(repo)
         repo_name = os.path.basename(repo_path)
+        return repo_name
 
 
     def available_cpu_count(self):
