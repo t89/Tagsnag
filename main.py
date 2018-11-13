@@ -26,7 +26,7 @@ def display_help():
         print("{}".format(help_string))
 
 
-def main(argv):
+def main():
     try:
         cwd_path = os.getcwd()
 
@@ -111,5 +111,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
 
