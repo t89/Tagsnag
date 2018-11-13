@@ -8,8 +8,8 @@ with open('LICENSE', 'r') as fh:
     license = fh.read()
 
 setuptools.setup(
-    name                          = 'Tagsnatch',
-    version                       = '0.6.2',
+    name                          = 'Tagsnag',
+    version                       = '0.6.3',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
     description                   = 'Search files over multiple Git repos, and extract a certain version',
