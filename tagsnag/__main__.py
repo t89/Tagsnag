@@ -20,10 +20,7 @@ def get_script_path():
 
 
 def display_help():
-    help_path = os.path.join(get_script_path(), 'docs/help')
-    with open(help_path, 'r') as fh:
-        help_string = fh.read()
-        print("{}".format(help_string))
+    print("{}".format('Insufficient arguments. For a full description run: tagsnag --help'))
 
 
 def main():
@@ -38,7 +35,7 @@ def main():
 
         ##
         # Optionals grouped by category
-        ap.add_argument('-d', '--destination', default=cwd_path, help='Destination Path')
+        ap.add_argument('-d', '--destination', default=os.path.join(cwd_path, "Tagsnag"), help='Destination Path')
 
         ap.add_argument('-e', '--extension', help='Specify a file extension')
         ap.add_argument('-f', '--filename', help='String the filename contains')
@@ -70,7 +67,6 @@ def main():
         tag         = options.tag
         xml_path    = options.xml
 
-        ##
         # Flags
         should_autostash      = options.autostash
         should_create_logfile = options.log
@@ -91,13 +87,13 @@ def main():
         if xml_path:
             tagsnag.start_with_xml(xml_path)
 
-        elif tag and filename and destination and extension:
+        elif tag and filename and extension:
             tagsnag.extract_file_from_all_repos(tag=tag,
                     filename=filename,
                     extension=extension,
                     destination=destination)
 
-        elif tag and directory and destination:
+        elif tag and directory :
             tagsnag.extract_directory_from_all_repos(tag=tag,
                     directory=directory,
                     destination=destination)
