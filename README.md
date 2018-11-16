@@ -1,6 +1,8 @@
+![Tagsnag](./docs/Icon/Multi.png)
+
 # Tagsnag
 
-Update master, checkout a version and extract a file from this specific version over multiple Git repositories in one CLI call.
+The idea behind Tagsnag is to provide a quick & easy to use cli-tool to extract data for comparison from a *similar version* over *multiple* repositories. It was written with educational use in mind: Imagine `n` groups of students handing in assignments via `n` Git repositories. The assignments are tagged rather similary and follow the same structure roughly.
 
 
 ## Installation
@@ -30,6 +32,25 @@ $ pip install gitpython
 ## Run
 
 To run `tagsnag` over all repositories in a directory enter the directory via shell. The whole set of commands can be found by calling `--help`.
+
+## Overview
+
+| Flag              | Description                                                                                          |
+| :---              | :---                                                                                                 |
+| `-l, --log`       | Create a logfile.                                                                                    |
+| `-p, --prune`     | [Read Git manual.](https://git-scm.com/docs/git-prune) May come in handy if tags are replaced a lot. |
+| `-s, --autostash` | Instead of skipping the untidy repository, stash all changes.                                        |
+| `-u, --update`    | Run `git checkout master && git pull origin master` on all repositories.                             |
+| `-v, --verbose`   | Additional logging.                                                                                  |
+
+
+| Modes                  | Necessary Arguments                                        |
+| :---                   | :---                                                       |
+| **Extract File**       | `tagsnag --tag=<tag> --filename=<name> --extension=<type>` |
+| **Extract Dir**        | `tagsnag --tag=<tag> --directory=<name>`                   |
+| **Extract via XML**    | *(Deprecated)* `tagsnag --xml=<path>`                      |
+| `--destination=<name>` | *Optional:* Name created destination folder                |
+
 
 ## Updating repositories
 
