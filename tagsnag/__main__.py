@@ -19,15 +19,13 @@ def get_script_path():
     return os.path.dirname(__file__)
 
 
-def display_help():
-    print("{}".format('Insufficient arguments. For a full description run: tagsnag --help'))
-
-
 def main():
     try:
         cwd_path = os.getcwd()
 
-        tagsnag = Tagsnag(cwd_path)
+        should_use_gui = (not len(sys.argv) > 1)
+
+        tagsnag = Tagsnag(cwd_path, should_use_gui = should_use_gui)
 
         ##
         # Create argument parser
@@ -36,7 +34,6 @@ def main():
         ##
         # Optionals grouped by category
         ap.add_argument('-d', '--destination', default=os.path.join(cwd_path, "Tagsnag"), help='Destination Path')
-
         ap.add_argument('-e', '--extension', help='Specify a file extension')
         ap.add_argument('-f', '--filename', help='String the filename contains')
         ap.add_argument('-dir', '--directory', help='Name of the folder you would like to extract')
@@ -81,25 +78,13 @@ def main():
         tagsnag.set_should_prune(should_prune)
         tagsnag.set_create_logfile(should_create_logfile)
 
-        if should_update:
-            tagsnag.update_all_repos()
-
-        if xml_path:
-            tagsnag.start_with_xml(xml_path)
-
-        elif tag and filename and extension:
-            tagsnag.extract_file_from_all_repos(tag=tag,
-                    filename=filename,
-                    extension=extension,
-                    destination=destination)
-
-        elif tag and directory :
-            tagsnag.extract_directory_from_all_repos(tag=tag,
-                    directory=directory,
-                    destination=destination)
-
-        elif not should_update:
-            display_help()
+        if not should_use_gui:
+            tagsnag.run_from_cli(should_update=should_update,
+                                  xml_path=xml_path,
+                                  tag=tag,
+                                  directory=directory,
+                                  filename=filename,
+                                  extension=extension)
 
 
     except KeyboardInterrupt:
@@ -109,4 +94,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
