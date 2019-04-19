@@ -49,6 +49,25 @@ class Git():
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
 
+    def head_state(self, repo):
+        """ Return human readable description of head location """
+
+        # Detached state needs to be checked first or repo.active_branch will crash
+        if repo.head.is_detached:
+            commit_string = '{}'.format(repo.head.commit)
+            return commit_string[:7] + ' detached'
+
+
+        active_tag = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
+        active_branch = "{}".format(repo.active_branch)
+
+        if active_tag:
+            return active_tag
+
+        elif active_branch:
+            return active_branch
+
+
     def update_all_repos(self):
         """Initiate threaded updates for all repositories in working directory"""
 
