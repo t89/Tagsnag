@@ -394,7 +394,7 @@ class Git():
 
 
     def get_root(self, repo):
-        return repo.git.rev_parse("--show-toplevel")
+        return repo.git.rev_parse('--show-toplevel')
 
 
     ##
