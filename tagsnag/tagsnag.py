@@ -20,7 +20,6 @@ class Tagsnag():
 
         self.cwd = cwd
         self.should_use_gui = should_use_gui
-        self.git = Git(self.cwd)
 
         self.initial_setup()
 
@@ -45,28 +44,30 @@ class Tagsnag():
     def run_from_cli(self, should_update, xml_path, tag, directory, filename, extension):
         "This method handles run from CLI"
 
+        self.git = Git(self.cwd)
+
         if should_update:
             self.git.update_all_repos()
-               
+
             if xml_path:
                 self.git.start_with_xml(xml_path)
-                   
+
             elif tag and filename and extension:
                 self.git.extract_file_from_all_repos(tag=tag,
                                                     filename=filename,
                                                     extension=extension,
                                                     destination=destination)
-                   
+
             elif tag and directory :
                 self.git.extract_directory_from_all_repos(tag=tag,
                                                          directory=directory,
                                                          destination=destination)
-                   
+
             elif not should_update:
                 # Funky argument combination. Display help:
                 self.display_help()
 
-        
+
     def display_help(self):
             print("{}".format('Insufficient arguments. For a full description run: tagsnag --help'))
 
