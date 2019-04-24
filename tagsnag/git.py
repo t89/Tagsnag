@@ -403,6 +403,20 @@ class Git():
         return repo.git.rev_parse('--show-toplevel')
 
 
+    def behind_branch(self, repo, remote, branch):
+        """ Checks by how many commits <branch> is behind <remote>/<branch> """
+
+        # print('[{}]: BEHIND? Branch: {} Remote: {}'.format(self.get_repo_name(repo), branch, remote))
+        return int(repo.git.rev_list('--left-only', '--count', '{}/{}...@'.format(remote, branch)))
+
+
+    def ahead_branch(self, repo, remote, branch):
+        """ Checks by how many commits <branch> is ahead <remote>/<branch> """
+
+        # print('[{}]: AHEAD? Branch: {} Remote: {}'.format(self.get_repo_name(repo), branch, remote))
+        return int(repo.git.rev_list('--right-only', '--count', '{}/{}...@'.format(remote, branch)))
+
+
     ##
     # Filesystem methods
 
