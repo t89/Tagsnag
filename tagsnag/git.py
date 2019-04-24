@@ -64,11 +64,11 @@ class Git():
         # Detached state needs to be checked first or repo.active_branch will crash
         if repo.head.is_detached:
             commit_string = '{}'.format(repo.head.commit)
-            return commit_string[:7] + ' detached'
+            return 'Detached at {}'.format(commit_string[:7])
 
+        active_branch = self.active_branch(repo)
 
         active_tag = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
-        active_branch = "{}".format(repo.active_branch)
 
         if active_tag:
             return active_tag
