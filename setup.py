@@ -22,8 +22,23 @@ setuptools.setup(
                                         'console_scripts': ['tagsnag=tagsnag.__main__:main'],
                                     },
     install_requires              = [
+
+                                        ##
+                                        # Interact with Git from within Python without using
+                                        # the shell (too often). Careful, this seems not to be
+                                        # garbage collected very well.
                                         'gitpython',
+
+                                        ##
+                                        # Multiplatform GUI layer build on top of TKInter.
                                         'PySimpleGUI',
+
+                                        ##
+                                        # In comparison to the default multiprocessing module, pathos is able to
+                                        # serialize almost anything in Python, including multiple argument functions
+                                        # and instance methods without the hacky workaround of calling them from
+                                        # the global-scope.
+                                        'pathos'
                                     ],
 
     classifiers                   = [
