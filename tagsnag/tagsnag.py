@@ -11,6 +11,8 @@ import logging
 from tagsnag.git import Git
 from tagsnag.gui import GUI
 
+# Needed for CPU Count detection
+import re
 
 class Tagsnag():
     """Tagsnag main class"""
@@ -23,6 +25,7 @@ class Tagsnag():
 
         self.initial_setup()
 
+
     def initial_setup(self):
         ##
         # Flags
@@ -31,6 +34,7 @@ class Tagsnag():
         self.verbose = False
         self.should_create_logfile = False
         self.should_update = False
+        self.cpu_count = self.available_cpu_count()
 
         # Advanced setup
         self.setup_logger()
@@ -44,7 +48,7 @@ class Tagsnag():
     def run_from_cli(self, should_update, xml_path, tag, directory, filename, extension):
         "This method handles run from CLI"
 
-        self.git = Git(self.cwd)
+        self.git = Git(path=self.cwd, cpu_count=self.cpu_count)
 
         if should_update:
             self.git.update_all_repos()
@@ -73,7 +77,7 @@ class Tagsnag():
 
 
     def start_gui(self):
-            self.gui = GUI(self.cwd)
+            self.gui = GUI(path=self.cwd, cpu_count=self.cpu_count)
 
 
     def enable_logfile(self):

@@ -11,10 +11,14 @@ import PySimpleGUI as gui
 class GUI():
     """Tagsnag main class"""
 
-    def __init__(self, path):
+    def __init__(self, path, cpu_count=1):
         super(GUI, self).__init__()
 
         self.path = path
+        self.cpu_count = cpu_count
+        self.git = Git(self.path)
+        self.repos = self.get_repositories_in_path(self.path)
+
         self.initial_setup()
 
 
