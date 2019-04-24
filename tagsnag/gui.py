@@ -164,6 +164,13 @@ class GUI():
             upstream_color = orange
 
         tags = [t.path.lstrip('refs/tags/') for t in repo.tags]
+        no_tags_available = (len(tags) == 0)
+
+        if (no_tags_available):
+            tags.append('No Tags')
+        else:
+            tags.sort(reverse=True)
+
         repo_path = self.git.get_root(repo)
 
         sizes = self.table_sizes()
@@ -173,7 +180,7 @@ class GUI():
                    gui.Text('{}'.format(head_state), text_color=head_state_color, size=sizes[2], key='__{}_HEAD_STATE__'.format(index)),
                    gui.Text('{}'.format(status), text_color=status_color, size=sizes[3], key='__{}_STATUS__'.format(index)),
                    gui.Text('{}'.format(upstream), text_color=upstream_color, size=sizes[4], key='__{}_UPSTREAM__'.format(index)),
-                   gui.InputCombo(tags, size=sizes[5], key='__{}_TAG__'.format(index)),
+                   gui.InputCombo(tags, size=sizes[5], key='__{}_TAG__'.format(index), disabled=no_tags_available),
                    gui.Button('Open', size=sizes[6], tooltip='Open in Filebrowser', key='__{}_OPEN__'.format(index))],
                   [gui.ProgressBar(100, orientation='h', size=sizes[-1], bar_color=(blue, 'white'), border_width=0, key='__{}_PROGBAR__'.format(index))]
         ]
