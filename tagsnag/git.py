@@ -48,6 +48,15 @@ class Git():
             if len(found_paths) > 0:
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
 
+    def active_branch(self, repo):
+        """ Return name of active branch or None """
+
+        # Detached state needs to be checked first or repo.active_branch will crash
+        if repo.head.is_detached:
+            return None
+        else:
+            return "{}".format(repo.active_branch)
+
 
     def head_state(self, repo):
         """ Return human readable description of head location """
