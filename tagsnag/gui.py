@@ -221,14 +221,15 @@ class GUI():
 
         sizes = self.table_sizes()
 
-        layout = [[gui.CBox('', default=True, size=sizes[0], key='__{}_ACTIVE__'.format(index)),
-                   gui.Text('{}'.format(name), font='Helvetica 10 bold', size=sizes[1], key='__{}_NAME__'.format(index)),
-                   gui.Text('{}'.format(head_state), text_color=head_state_color, size=sizes[2], key='__{}_HEAD_STATE__'.format(index)),
-                   gui.Text('{}'.format(status), text_color=status_color, size=sizes[3], key='__{}_STATUS__'.format(index)),
-                   gui.Text('{}'.format(upstream), text_color=upstream_color, size=sizes[4], key='__{}_UPSTREAM__'.format(index)),
-                   gui.InputCombo(tags, size=sizes[5], key='__{}_TAG__'.format(index), disabled=no_tags_available),
-                   gui.Button('Open', size=sizes[6], tooltip='Open in Filebrowser', key='__{}_OPEN__'.format(index))],
-                  [gui.ProgressBar(100, orientation='h', size=sizes[-1], bar_color=(blue, 'white'), border_width=0, key='__{}_PROGBAR__'.format(index))]
+
+        layout = [[gui.CBox('', default=True, size=sizes[0], key='{}{}'.format(index, cb_active)),
+                   gui.Text('{}'.format(name), font='Helvetica 10 bold', size=sizes[1], key='{}{}'.format(index, txt_name)),
+                   gui.Text('{}'.format(head_state), text_color=head_state_color, size=sizes[2], key='{}{}'.format(index, txt_head_state)),
+                   gui.Text('{}'.format(status), text_color=status_color, size=sizes[3], key='{}{}'.format(index, txt_status)),
+                   gui.Text('{}'.format(upstream), text_color=upstream_color, size=sizes[4], key='{}{}'.format(index, txt_upstream)),
+                   gui.InputCombo(tags, size=sizes[5], key='{}{}'.format(index, combo_tags), disabled=no_tags_available),
+                   gui.Button('Open', size=sizes[6], tooltip='Open in Filebrowser', key='{}{}'.format(index, btn_open))],
+                  [gui.ProgressBar(100, orientation='h', size=sizes[-1], bar_color=(blue, 'white'), border_width=0, key='{}{}'.format(index, pb_pull))]
         ]
 
         return layout
@@ -237,43 +238,49 @@ class GUI():
     def create_window(self):
         """ Setup GUI layout and start loop """
 
+
         main_layout = [[gui.Text('Containing Folder',
-                            size=(20, 1)),
-                   # gui.Input('{}'.format(self.path), do_not_clear=True, key='_CONTAINING_DIR_'),
-                   gui.FolderBrowse(),
-                   gui.Text('{}'.format(self.path), key='_CONTAINING_DIR_')],
+                            size=(15, 1)),
+                   gui.FolderBrowse(target=txt_containing_dir, key=btn_folderbrowse),
+                   gui.Text('{}'.format(self.path), key=txt_containing_dir)]
 
-                  [gui.Text('Destination Folder',
-                            size=(20, 1)),
-                   gui.FolderBrowse(),
-                   gui.Text('{}/TagSnag'.format(self.path), key='_DESTINATION_DIR_')]]
+                  # ,[gui.Text('Destination Folder',
+                  #           size=(15, 1)),
+                  #  gui.FolderBrowse(target=txt_destination_dir),
+                  #  gui.Text('{}/TagSnag'.format(self.path), key=txt_destination_dir)]
+                  ]
+        # Spacer
+        spacer = [[gui.Text('_' * 133)]]
 
+        main_layout = main_layout + spacer
+        table_layout = self.layout_repo_table(self.path)
 
-        main_layout = main_layout + [[gui.Text('_' * 140)]]
-        main_layout = main_layout + self.layout_repo_table(self.path)
-        main_layout = main_layout + [[gui.Text('_' * 140)]]
+        main_layout = main_layout + table_layout
+
+        # print('\n'.join(str(line) for line in self.layout_repo_table(self.path)))
+        main_layout = main_layout + spacer
 
         main_layout = main_layout + [
 
-            [gui.Button('Invert Selection'),
-             gui.CBox('Autostash', default=True),
-             gui.CBox('Prune', default=True),
-             gui.CBox('Log', default=False),
-             gui.CBox('Verbose', default=False),
-             gui.Button('Update')],
+            [gui.Button('Invert Selection', key=btn_invert_selection),
+             gui.CBox('Autostash', default=True, key=cb_autostash),
+             gui.CBox('Prune', default=True, key=cb_prune),
+             gui.CBox('Log', default=False, key=cb_log),
+             gui.CBox('Verbose', default=False, key=cb_verbose),
+             gui.Button('Update', key=btn_update)],
 
-            [gui.Input(default_text='git stash', size=(70,1), disabled=True),
-             gui.Button('Execute for selection', disabled=True),
-             gui.CBox('I know what I\'m doing...', default=False)],
+            [gui.Input(default_text='git stash', size=(70,1), disabled=True, key=txt_git_command),
+             gui.Button('Execute for selection', disabled=True, key=btn_execute),
+             gui.CBox('I know what I\'m doing...', default=False, key=cb_confirmation)],
 
-            [gui.Input(default_text='Tag', size=(20,1)),
-             gui.Input(default_text='Directory', size=(30,1)),
-             gui.Input(default_text='Destination', size=(30,1)),
-             gui.Button('Dry Run'),
-             gui.Button('Extract', disabled=True)],
+            [gui.Input(default_text='Tag', size=(20,1), key=txt_git_tag),
+             gui.Input(default_text='Directory', size=(30,1), key=txt_git_directory),
+             gui.Input(default_text='Destination', size=(30,1), key=txt_git_destination),
+             gui.Button('Dry Run', key=btn_dryrun),
+             gui.Button('Extract', disabled=True, key=btn_extract)],
 
-            [gui.Button('Exit'),
-             gui.Button('Contact')]]
+            [gui.Button('Exit', key=btn_exit),
+             gui.Button('Contact', key=btn_contact)]]
 
         log_layout = [[gui.Output(size=(200, 100))]]
 
