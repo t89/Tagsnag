@@ -17,6 +17,52 @@ import PySimpleGUI as gui
 from pathos.multiprocessing import ProcessingPool as Pool
 
 
+##
+# Setting up keys for gui elements. I predefine the keys as
+# strings to avoid typos. Also it enables me to change them all
+# in one place. They are defined following this scheme:
+# Number of the Table element, description of gui element
+# btn = button, txt = text, cb = checkbox, fb = folderbrowse
+# combo = bombobox, pb = progressbar
+# <num>_{btn|txt|cb|fb|combo|pb}_<description without '_' inside>
+# The idx numbers are attached to the string if relevant
+
+##
+# MAIN GUI
+txt_containing_dir = '_txt_containingdir'
+txt_destination_dir = '_txt_destinationdir'
+txt_git_command = '_txt_gitcommand'
+txt_git_tag = '_txt_gittag'
+txt_git_directory = '_txt_gitdirectory'
+txt_git_destination = '_txt_gitdestination'
+
+btn_folderbrowse = '_btn_folderbrowse'
+btn_invert_selection = '_btn_invertselection'
+btn_update = '_btn_update'
+btn_execute = '_btn_execute'
+btn_dryrun = '_btn_dryrun'
+btn_extract = '_btn_extract'
+btn_exit = '_btn_exit'
+btn_contact = '_btn_contact'
+
+cb_autostash = '_cb_autostash'
+cb_prune = '_cb_prune'
+cb_log = '_cb_log'
+cb_verbose = '_cb_verbose'
+cb_confirmation = '_cb_confirmation'
+
+##
+# Table GUI
+cb_active = '_cb_active'
+txt_name = '_txt_name'
+txt_head_state = '_txt_head_state'
+txt_status = '_txt_status'
+txt_upstream = '_txt_upstream'
+combo_tags = '_combo_tags'
+btn_open = '_btn_open'
+pb_pull = '_pb_pull'
+
+
 class GUI():
     """Tagsnag main class"""
 
