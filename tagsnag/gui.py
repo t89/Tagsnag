@@ -60,7 +60,7 @@ txt_status = '_txt_status'
 txt_upstream = '_txt_upstream'
 combo_tags = '_combo_tags'
 btn_open = '_btn_open'
-pb_pull = '_pb_pull'
+pb_repo_action = '_pb_repoaction'
 
 
 class GUI():
@@ -97,21 +97,28 @@ class GUI():
         """ Generate layout for console output """
 
 
-    def table_sizes(self):
-        """ Returns a list of (width, 1) tuples for the repo table. Last element is the total width) """
-        sizes = [6, 20, 35, 5, 10, 20, 11]
-
-        # Last element is the sum of all (for progressbars)
-        # sizes.append(sum(sizes))
+    def table_sizes_dict(self):
+        """ Returns a dict {<element_key> : (<width>, 1)} for the repo table. """
 
         ##
+        # I wanted the progress bar (pb_repo_action) to span the whole table, so I summed all widths.
+        # Turns out it's way too large. I don't have time to debug this behaviour now.
+        #
         # No f*ing clue why the progressbar size differs by such a huge factor.
         # It _seemed_ like the value was interpreted as percentage, since it was roughly
         # 10% too large. But I tested that and can now rule that out. Hard coded as 85,
         # for now. @HARDCODED @FIX
-        sizes.append(85)
 
-        return [(x, 1) for x in sizes]
+        sizes_dict = {cb_active : (6, 1),
+                      txt_name : (20, 1),
+                      txt_head_state : (35, 1),
+                      txt_status : (5, 1),
+                      txt_upstream : (10, 1),
+                      combo_tags : (20, 1),
+                      btn_open : (11, 1),
+                      pb_repo_action : (85, 1)}
+
+        return sizes_dict
 
     def test_function(self, index, repo):
         print('Testfunction: {} {}'.format(index, repo))
@@ -124,15 +131,15 @@ class GUI():
         # orange="#F89433"
         # blue="#33C5EF"
 
-        sizes = self.table_sizes()
+        sizes = self.table_sizes_dict()
 
-        layout = [[gui.Text('Include', size=sizes[0]),
-                   gui.Text('Repository', size=sizes[1]),
-                   gui.Text('HEAD', size=sizes[2]),
-                   gui.Text('Status', size=sizes[3]),
-                   gui.Text('Upstream', size=sizes[4]),
-                   gui.Text('Tags', size=sizes[5]),
-                   gui.Text('Filebrowser', size=sizes[6])
+        layout = [[gui.Text('Include', size=sizes[cb_active]),
+                   gui.Text('Repository', size=sizes[txt_name]),
+                   gui.Text('HEAD', size=sizes[txt_head_state]),
+                   gui.Text('Status', size=sizes[txt_status]),
+                   gui.Text('Upstream', size=sizes[txt_upstream]),
+                   gui.Text('Tags', size=sizes[combo_tags]),
+                   gui.Text('Filebrowser', size=sizes[btn_open])
                   ]]
 
         # Ignore the pooling completely, if we are limited to one core anyway.
@@ -219,17 +226,49 @@ class GUI():
 
         repo_path = self.git.get_root(repo)
 
-        sizes = self.table_sizes()
+        sizes = self.table_sizes_dict()
 
+        layout = [[gui.CBox('',
+                            default=True,
+                            size=sizes[cb_active],
+                            key='{}{}'.format(index, cb_active)),
 
-        layout = [[gui.CBox('', default=True, size=sizes[0], key='{}{}'.format(index, cb_active)),
-                   gui.Text('{}'.format(name), font='Helvetica 10 bold', size=sizes[1], key='{}{}'.format(index, txt_name)),
-                   gui.Text('{}'.format(head_state), text_color=head_state_color, size=sizes[2], key='{}{}'.format(index, txt_head_state)),
-                   gui.Text('{}'.format(status), text_color=status_color, size=sizes[3], key='{}{}'.format(index, txt_status)),
-                   gui.Text('{}'.format(upstream), text_color=upstream_color, size=sizes[4], key='{}{}'.format(index, txt_upstream)),
-                   gui.InputCombo(tags, size=sizes[5], key='{}{}'.format(index, combo_tags), disabled=no_tags_available),
-                   gui.Button('Open', size=sizes[6], tooltip='Open in Filebrowser', key='{}{}'.format(index, btn_open))],
-                  [gui.ProgressBar(100, orientation='h', size=sizes[-1], bar_color=(blue, 'white'), border_width=0, key='{}{}'.format(index, pb_pull))]
+                   gui.Text('{}'.format(name),
+                            font='Helvetica 10 bold',
+                            size=sizes[txt_name],
+                            key='{}{}'.format(index, txt_name)),
+
+                   gui.Text('{}'.format(head_state),
+                            text_color=head_state_color,
+                            size=sizes[txt_head_state],
+                            key='{}{}'.format(index, txt_head_state)),
+
+                   gui.Text('{}'.format(status),
+                            text_color=status_color,
+                            size=sizes[txt_status],
+                            key='{}{}'.format(index, txt_status)),
+
+                   gui.Text('{}'.format(upstream),
+                            text_color=upstream_color,
+                            size=sizes[txt_upstream],
+                            key='{}{}'.format(index, txt_upstream)),
+
+                   gui.InputCombo(tags,
+                                  size=sizes[combo_tags],
+                                  key='{}{}'.format(index, combo_tags),
+                                  disabled=no_tags_available),
+
+                   gui.Button('Open',
+                              size=sizes[btn_open],
+                              tooltip='Open in Filebrowser',
+                              key='{}{}'.format(index, btn_open))],
+
+                  [gui.ProgressBar(100,
+                                   orientation='h',
+                                   size=sizes[pb_repo_action],
+                                   bar_color=(blue, 'white'),
+                                   border_width=0,
+                                   key='{}{}'.format(index, pb_repo_action))]
         ]
 
         return layout
