@@ -29,37 +29,37 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 ##
 # MAIN GUI
-txt_containing_dir = '_txt_containingdir'
-txt_destination_dir = '_txt_destinationdir'
-txt_git_command = '_txt_gitcommand'
-txt_git_tag = '_txt_gittag'
-txt_git_directory = '_txt_gitdirectory'
-txt_git_destination = '_txt_gitdestination'
+txt_containing_dir       = '_txt_containingdir'
+txt_destination_dir      = '_txt_destinationdir'
+txt_extraction_command   = '_txt_gitcommand'
+txt_extraction_tag       = '_txt_gittag'
+txt_extraction_directory = '_txt_gitdirectory'
+# txt_git_destination      = '_txt_gitdestination'
 
-btn_folderbrowse = '_btn_folderbrowse'
+btn_folderbrowse     = '_btn_folderbrowse'
 btn_invert_selection = '_btn_invertselection'
-btn_update = '_btn_update'
-btn_execute = '_btn_execute'
-btn_dryrun = '_btn_dryrun'
-btn_extract = '_btn_extract'
-btn_exit = '_btn_exit'
-btn_contact = '_btn_contact'
+btn_update           = '_btn_update'
+btn_execute          = '_btn_execute'
+btn_dryrun           = '_btn_dryrun'
+btn_extract          = '_btn_extract'
+btn_exit             = '_btn_exit'
+btn_contact          = '_btn_contact'
 
-cb_autostash = '_cb_autostash'
-cb_prune = '_cb_prune'
-cb_log = '_cb_log'
-cb_verbose = '_cb_verbose'
+cb_autostash    = '_cb_autostash'
+cb_prune        = '_cb_prune'
+cb_log          = '_cb_log'
+cb_verbose      = '_cb_verbose'
 cb_confirmation = '_cb_confirmation'
 
 ##
 # Table GUI
-cb_active = '_cb_active'
-txt_name = '_txt_name'
+cb_active      = '_cb_active'
+txt_name       = '_txt_name'
 txt_head_state = '_txt_head_state'
-txt_status = '_txt_status'
-txt_upstream = '_txt_upstream'
-combo_tags = '_combo_tags'
-btn_open = '_btn_open'
+txt_status     = '_txt_status'
+txt_upstream   = '_txt_upstream'
+combo_tags     = '_combo_tags'
+btn_open       = '_btn_open'
 pb_repo_action = '_pb_repoaction'
 
 
@@ -69,10 +69,10 @@ class GUI():
     def __init__(self, path, cpu_count=1):
         super(GUI, self).__init__()
 
-        self.path = path
+        self.path      = path
         self.cpu_count = cpu_count
-        self.git = Git(self.path)
-        self.repos = self.get_repositories_in_path(self.path)
+        self.git       = Git(self.path)
+        self.repos     = self.get_repositories_in_path(self.path)
 
         self.initial_setup()
 
@@ -109,13 +109,13 @@ class GUI():
         # 10% too large. But I tested that and can now rule that out. Hard coded as 85,
         # for now. @HARDCODED @FIX
 
-        sizes_dict = {cb_active : (6, 1),
-                      txt_name : (20, 1),
+        sizes_dict = {cb_active      : (6, 1),
+                      txt_name       : (20, 1),
                       txt_head_state : (35, 1),
-                      txt_status : (5, 1),
-                      txt_upstream : (10, 1),
-                      combo_tags : (20, 1),
-                      btn_open : (11, 1),
+                      txt_status     : (5, 1),
+                      txt_upstream   : (10, 1),
+                      combo_tags     : (20, 1),
+                      btn_open       : (11, 1),
                       pb_repo_action : (85, 1)}
 
         return sizes_dict
@@ -145,9 +145,11 @@ class GUI():
         # Ignore the pooling completely, if we are limited to one core anyway.
         if (self.cpu_count > 1):
             with Pool(processes=self.cpu_count) as pool:
-                layout_rows = list(pool.map(lambda e: self.table_row_layout_for_repo(e[0], e[1]), enumerate(self.repos)))
+                layout_rows = list(pool.map(lambda e: self.table_row_layout_for_repo(e[0], e[1]),
+                                            enumerate(self.repos)))
         else:
-            layout_rows = list(map(lambda e: self.table_row_layout_for_repo(e[0], e[1]), enumerate(self.repos)))
+            layout_rows = list(map(lambda e: self.table_row_layout_for_repo(e[0], e[1]),
+                                   enumerate(self.repos)))
 
         # Unwrap the inner lists
         # TODO: After an hour of debugging this was a working solution. A quick quess is, that the
@@ -164,17 +166,17 @@ class GUI():
 
     def table_row_layout_for_repo(self, index, repo):
 
-        orange='#F89433'
-        blue='#33C5EF'
+        orange ='#F89433'
+        blue   ='#33C5EF'
 
         name = self.git.get_repo_name(repo)
 
-        status_color = 'black'
-        upstream_color = 'black'
+        status_color     = 'black'
+        upstream_color   = 'black'
         head_state_color = 'black'
 
         if (self.git.is_dirty(repo)):
-            status = 'Dirty'
+            status       = 'Dirty'
             status_color = orange
 
         else:
