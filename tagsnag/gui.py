@@ -125,10 +125,6 @@ class GUI():
 
         return sizes_dict
 
-    def test_function(self, index, repo):
-        print('Testfunction: {} {}'.format(index, repo))
-        return [[]]
-
 
     def layout_repo_table(self, path):
         """ Generates layout for table """
