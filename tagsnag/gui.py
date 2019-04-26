@@ -276,6 +276,35 @@ class GUI():
         return layout
 
 
+    def assign_values(self, values):
+        """ Takes the gui loop values and updates the instance variables """
+
+        ##
+        # Only _editable_ text elements return a value!
+        try:
+            # Assign Checkboxes
+            self.should_autostash = values[cb_autostash]
+            self.should_prune     = values[cb_prune]
+            self.should_log       = values[cb_log]
+            self.is_verbose       = values[cb_verbose]
+            self.is_confirmed     = values[cb_confirmation]
+
+            # Assign input fields
+            self.destination_dir      = values[txt_destination_dir]
+            self.extraction_command   = values[txt_extraction_command]
+            self.extraction_tag       = values[txt_extraction_tag]
+            self.extraction_directory = values[txt_extraction_directory]
+
+
+            for idx in range(0, len(self.repos)):
+                # TODO: Assign. GUI layout is generated in parallel, do NOT
+                # assume the order to be the same as in self.repos!
+                active = values['{}{}'.format(idx, cb_active)]
+
+        except KeyError as error:
+            print(error)
+
+
     def create_window(self):
         """ Setup GUI layout and start loop """
 
@@ -332,6 +361,7 @@ class GUI():
         # GUI Event Loop
         while True:
             event, values = window.Read(timeout=10)
+            self.assign_values(values)
             if event != gui.TIMEOUT_KEY:
                 # window.Element('_MULTIOUT_').Update(str(event) + '\n' + str(values), append=True)
                 window.FindElement('__0_PROGBAR__').UpdateBar(50 + 1)
