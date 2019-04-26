@@ -16,6 +16,11 @@ from .git import Git
 import PySimpleGUI as gui
 from pathos.multiprocessing import ProcessingPool as Pool
 
+##
+# Color Config
+color_highlight = '#F89433'
+color_accent    = '#33C5EF'
+
 
 ##
 # Setting up keys for gui elements. I predefine the keys as
@@ -128,9 +133,6 @@ class GUI():
     def layout_repo_table(self, path):
         """ Generates layout for table """
 
-        # orange="#F89433"
-        # blue="#33C5EF"
-
         sizes = self.table_sizes_dict()
 
         layout = [[gui.Text('Include', size=sizes[cb_active]),
@@ -166,9 +168,6 @@ class GUI():
 
     def table_row_layout_for_repo(self, index, repo):
 
-        orange ='#F89433'
-        blue   ='#33C5EF'
-
         name = self.git.get_repo_name(repo)
 
         status_color     = 'black'
@@ -177,7 +176,7 @@ class GUI():
 
         if (self.git.is_dirty(repo)):
             status       = 'Dirty'
-            status_color = orange
+            status_color = color_highlight
 
         else:
             status = 'Clean'
@@ -189,7 +188,7 @@ class GUI():
         head_state = '{}'.format(self.git.head_state(repo))
 
         if (repo.head.is_detached):
-            head_state_color = orange
+            head_state_color = color_highlight
 
         # Set to -1 so that we can distinguish if this value has been updated
         behind = -1
@@ -216,7 +215,7 @@ class GUI():
 
         else:
             upstream = "{} behind".format(behind)
-            upstream_color = orange
+            upstream_color = color_highlight
 
         tags = [t.path.lstrip('refs/tags/') for t in repo.tags]
         no_tags_available = (len(tags) == 0)
@@ -268,7 +267,7 @@ class GUI():
                   [gui.ProgressBar(100,
                                    orientation='h',
                                    size=sizes[pb_repo_action],
-                                   bar_color=(blue, 'white'),
+                                   bar_color=(color_accent, 'white'),
                                    border_width=0,
                                    key='{}{}'.format(index, pb_repo_action))]
         ]
