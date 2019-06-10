@@ -18,6 +18,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from git import Git
 from git import Repo
 from git.exc import InvalidGitRepositoryError
+from git.exc import GitCommandError
 
 from xml.etree import ElementTree as ET
 
@@ -47,6 +48,7 @@ class Git():
             found_paths = self.search_files(filename=snag.filename, path=snag.local_repo_path, extension=snag.extension)
             if len(found_paths) > 0:
                 self.copy_file_to_destination(path = found_paths[0], destination = snag.destination)
+
 
     def active_branch(self, repo):
         """ Return name of active branch or None """
@@ -388,6 +390,7 @@ class Git():
     def stash_repo(self, repo):
         """ Run stash within provided repository """
 
+        assert repo.exists()
         git = repo.git
         git.stash()
 
@@ -395,12 +398,45 @@ class Git():
     def stash_pop_repo(self, repo):
         """ Run stash within provided repository """
 
+        assert repo.exists()
         git = repo.git
         git.stash('pop')
 
 
     def get_root(self, repo):
         return repo.git.rev_parse('--show-toplevel')
+
+
+    def fetch(self, repo, progress_printer = None):
+        """ Fetch data from origin for provided repo and branch and return fetch info """
+
+        print('FETCH with PP {}'.format(progress_printer))
+        fetch_info = None
+        repo_name = self.get_repo_name(repo)
+        self.log.debug('  [{}]: Fetch initiated'.format(repo_name))
+        try:
+            if progress_printer == None:
+                fetch_info = repo.remotes.origin.fetch()
+
+            else:
+                origin = repo.remotes.origin
+                assert origin.exists()
+                fetch_info = origin.fetch(progress=progress_printer)
+
+        except GitCommandError as exception:
+            self.log.info('  [{}]: Git Command Error:\n{}'.format(repo_name, exception))
+
+            if exception.stdout:
+                self.log.info('  [{}]: !! stdout was:'.format(repo_name))
+                self.log.info('  [{}]: {}'.format(repo_name, exception.stdout))
+
+            if exception.stderr:
+                self.log.info('  [{}]: !! stderr was:'.format(repo_name))
+                self.log.info('  [{}]: {}'.format(repo_name, exception.stderr))
+        # except AssertionError as exception:
+        #     print('exception {}'.format(exception))
+
+        return fetch_info
 
 
     def behind_branch(self, repo, remote, branch):

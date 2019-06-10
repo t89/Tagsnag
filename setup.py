@@ -27,7 +27,10 @@ setuptools.setup(
                                         # Interact with Git from within Python without using
                                         # the shell (too often). Careful, this seems not to be
                                         # garbage collected very well.
-                                        'gitpython',
+                                        # Fixed to 2.1.11 because I replaced a private RemoteProgress
+                                        # function. See ./tagsnag/gui.py
+                                        # https://github.com/gitpython-developers/GitPython/issues/871
+                                        'gitpython==2.1.11',
 
                                         ##
                                         # Multiplatform GUI layer build on top of TKInter.
