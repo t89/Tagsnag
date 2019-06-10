@@ -45,7 +45,7 @@ class Tagsnag():
 
 
 
-    def run_from_cli(self, should_update, xml_path, tag, directory, filename, extension):
+    def run_from_cli(self, should_update, xml_path, tag, directory, destination, filename, extension):
         "This method handles run from CLI"
 
         self.git = Git(path=self.cwd, cpu_count=self.cpu_count)

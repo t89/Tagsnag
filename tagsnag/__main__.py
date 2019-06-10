@@ -83,6 +83,7 @@ def main():
                                   xml_path=xml_path,
                                   tag=tag,
                                   directory=directory,
+                                  destination=destination,
                                   filename=filename,
                                   extension=extension)
 
