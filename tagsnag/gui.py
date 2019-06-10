@@ -245,6 +245,7 @@ class GUI:
         self.git       = Git(self.path)
         self.repos     = self.get_repositories_in_path(self.path)
 
+        self.r_idx_is_selected               = {}
         self.r_idx_progress_map              = {}
         self.r_idx_progress_message_map      = {}
         self.r_idx_active_cmd_map            = {}
@@ -772,6 +773,7 @@ class GUI:
                 # TODO: Assign. GUI layout is generated in parallel, do NOT
                 # assume the order to be the same as in self.repos!
                 active = values['{}{}'.format(idx, cb_active)]
+                self.r_idx_is_selected[idx] = active
 
         except KeyError as error:
             print(error)
@@ -1022,6 +1024,11 @@ class GUI:
         print('R_IDX: {} message: {} progress: {}'.format(r_idx, message, progress))
         self.r_idx_progress_map[r_idx] = progress
         self.r_idx_progress_message_map[r_idx] = message
+
+
+    def get_selected_repos(self):
+        """ Returns list of repositories which have been selected """
+        return [self.repos[k] for k,v in self.r_idx_is_selected.items() if v == True]
 
 
     def inspect(self, element):
