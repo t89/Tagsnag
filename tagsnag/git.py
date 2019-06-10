@@ -85,7 +85,12 @@ class Git():
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
-        self.log.info('Initiating repo update on {} threads.'.format(self.cpu_count))
+        self.update_repos(self.repos)
+
+
+    def update_repos(self, repos):
+
+        self.log.info('Initiating repo update on up to {} threads.'.format(self.cpu_count))
 
         with ThreadPoolExecutor(max_workers=self.cpu_count) as executor:
             for repo in self.repos:
