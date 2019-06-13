@@ -230,7 +230,7 @@ class ProgressPrinter(RemoteProgress):
                                                                                 max_count,
                                                                                 message))
 
-        if self.r_idx and self.delegate:
+        if self.r_idx != None and self.delegate:
             progress = cur_count / (max_count or 100.0)
             self.delegate.set_progress(self.r_idx, message, progress)
 
