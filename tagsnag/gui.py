@@ -928,16 +928,16 @@ class GUI:
 
             elif btn_stash in event:
                 repo_idx = int(event.split('_')[0])
-                element_name = '{}{}'.format(repo_idx, combo_branches)
+                btn_element = '{}{}'.format(repo_idx, btn_stash)
+                status_element = '{}{}'.format(repo_idx, txt_status)
 
                 repo = self.repos[repo_idx]
                 assert repo
                 self.git.stash_repo(repo)
 
                 # Update UI
-                self.window.FindElement(element_name).Update(disabled=True)
-                self.window.FindElement(element_name).Update(value = 'Clean',
-                                                                                text_color='black')
+                self.window.FindElement(btn_element).Update(disabled=True)
+                self.window.FindElement(status_element).Update(value = 'Clean', text_color='black')
 
             elif btn_open in event:
                 repo_idx = int(event.split('_')[0])
