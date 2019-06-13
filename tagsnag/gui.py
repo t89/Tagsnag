@@ -379,23 +379,23 @@ class GUI:
         return layout
 
 
-    def fetch_all(self):
-
+    def fetch_repos(self, repos):
+        # get indeces from main repo list
+        indeces = [self.repos.index(r) for r in repos]
         if (self.cpu_count > 1):
-            print('{} self.repos {}'.format(len(self.repos), self.repos))
             with ThreadPoolExecutor(max_workers=self.cpu_count) as executor:
-                for idx in range(0, len(self.repos)):
+                for idx in indeces:
                     executor.submit(self.fetch_index, idx)
 
-                # for idx, repo in enumerate(self.repos):
-                #     # TODO: Log repo name?
-                #     executor.submit(self.fetch_index, idx)
-
         else:
-            for idx, repo in enumerate(self.repos):
+            for idx in indeces:
                 self.fetch_index(idx = idx)
 
         self.did_fetch = True
+
+
+    def fetch_all(self):
+        self.fetch_repos(self.repos)
 
 
     def fetch_index(self, idx):
@@ -951,9 +951,16 @@ class GUI:
                 self.open_path(path.absolute())
 
             elif event == btn_update:
-                # threading.Thread(target=self.fetch_all).start()
-                self.fetch_all()
-                # self.pull_all()
+                selected_repos = self.get_selected_repos()
+
+                self.fetch_repos(selected_repos)
+
+                for repo in selected_repos:
+                    self.git.checkout(repo, 'master')
+                    self.git.merge(repo=repo,
+                                   source_branch_name='origin/master',
+                                   target_branch_name='master')
+                # self.git.update_repos(selected_repos)
 
             elif combo_branches in event:
                 repo_idx = int(event.split('_')[0])
