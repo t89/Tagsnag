@@ -941,9 +941,8 @@ class GUI:
 
             elif btn_open in event:
                 repo_idx = int(event.split('_')[0])
-                element_name = '{}{}'.format(repo_idx, combo_branches)
+                element_name = '{}{}'.format(repo_idx, btn_open)
 
-                repo_name = self.window.FindElement(element_name).DisplayText
                 repo = self.repos[repo_idx]
                 assert repo
                 path = Path(self.git.get_root(repo))
