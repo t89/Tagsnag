@@ -395,7 +395,7 @@ class Git():
     def stash_repo(self, repo):
         """ Run stash within provided repository """
 
-        assert repo.exists()
+        assert repo
         git = repo.git
         git.stash()
 
