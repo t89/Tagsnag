@@ -416,7 +416,6 @@ class Git():
     def fetch(self, repo, progress_printer = None):
         """ Fetch data from origin for provided repo and branch and return fetch info """
 
-        print('FETCH with PP {}'.format(progress_printer))
         fetch_info = None
         repo_name = self.get_repo_name(repo)
         self.log.debug('  [{}]: Fetch initiated'.format(repo_name))
