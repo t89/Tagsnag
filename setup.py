@@ -33,6 +33,10 @@ setuptools.setup(
                                         'gitpython==2.1.11',
 
                                         ##
+                                        # Gitlab integration
+                                        'python-gitlab',
+
+                                        ##
                                         # Multiplatform GUI layer build on top of TKInter.
                                         'PySimpleGUI',
 
