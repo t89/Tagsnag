@@ -61,6 +61,7 @@ txt_extraction_directory = '_txt_gitdirectory'
 
 btn_folderbrowse     = '_btn_folderbrowse'
 btn_invert_selection = '_btn_invertselection'
+btn_checkout_master  = '_btn_checkout_master'
 btn_update           = '_btn_update'
 btn_execute          = '_btn_execute'
 btn_dryrun           = '_btn_dryrun'
@@ -806,7 +807,10 @@ class GUI:
             [gui.Button('Invert Selection',
                         key=btn_invert_selection),
 
-             gui.Button('Update \'master\' for selection',
+             gui.Button('Checkout \'master\'',
+                        key=btn_checkout_master),
+
+             gui.Button('Pull selected branch',
                         key=btn_update),
 
              gui.CBox('Autostash',
@@ -949,16 +953,30 @@ class GUI:
 
                 self.open_path(path.absolute())
 
+            elif event == btn_checkout_master:
+                selected_repos = self.get_selected_repos()
+
+                for repo in selected_repos:
+                    self.git.checkout(repo, 'master')
+
             elif event == btn_update:
                 selected_repos = self.get_selected_repos()
 
                 self.fetch_repos(selected_repos)
 
                 for repo in selected_repos:
-                    self.git.checkout(repo, 'master')
+                    active_branch = self.git.active_branch(repo)
+                    print('Active Branch {}'.format(active_branch))
+
+                    if (active_branch == "") or (repo.head.is_detached):
+                        active_branch = 'master'
+
+                    print('Active Branch {}'.format(active_branch))
+
+                    # self.git.checkout(repo, '{}'.format(active_branch))
                     self.git.merge(repo=repo,
-                                   source_branch_name='origin/master',
-                                   target_branch_name='master')
+                                   source_branch_name='origin/{}'.format(active_branch),
+                                   target_branch_name='{}'.format(active_branch))
                 # self.git.update_repos(selected_repos)
 
             elif combo_branches in event:
