@@ -444,6 +444,41 @@ class Git():
         return fetch_info
 
 
+    def merge(self, repo, source_branch_name, target_branch_name):
+        repo_name = self.get_repo_name(repo)
+        print('{}: Merge {} into {}'.format(repo_name, source_branch_name, target_branch_name))
+        try:
+            git = repo.git
+            git.execute(['git', 'checkout', '{}'.format(target_branch_name)])
+            git.execute(['git', 'merge', '{}'.format(source_branch_name), '--ff-only'])
+
+        except GitCommandError as exception:
+
+            self.log.info('  [{}]: Git Command Error:\n{}'.format(repo_name, exception))
+
+            if exception.stdout:
+                self.log.info('  [{}]: {}'.format(repo_name, exception.stdout))
+                self.log.info('  [{}]: !! stdout was:'.format(repo_name))
+
+            if exception.stderr:
+                self.log.info('  [{}]: !! stderr was:'.format(repo_name))
+                self.log.info('  [{}]: {}'.format(repo_name, exception.stderr))
+
+        # Solution using GitPython. Saved as reference
+        # source = repo.branches[source_branch_name]
+        # assert source
+
+        # target = repo.branches[target_branch_name]
+        # assert target
+
+        # base = repo.merge_base(source, master)
+        # assert base
+
+        # repo.index.merge_tree(target, base=base)
+        # repo.index.commit('Merge {} into {}'.format(source_branch_name, target_branch_name), parent_commits=(source.commit, target.commit))
+
+
+
     def behind_branch(self, repo, remote, branch):
         """ Checks by how many commits <branch> is behind <remote>/<branch> """
 
