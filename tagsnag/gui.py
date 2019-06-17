@@ -39,6 +39,8 @@ import inspect
 # Color Config
 color_highlight = '#F89433'
 color_accent    = '#33C5EF'
+color_negative = '#EF4E7B'
+color_positive = '#6EBB82'
 
 
 ##
@@ -251,6 +253,7 @@ class GUI:
         self.r_idx_is_selected               = {}
         self.r_idx_progress_map              = {}
         self.r_idx_progress_message_map      = {}
+        self.r_idx_progress_color_map        = {}
         self.r_idx_active_cmd_map            = {}
         self.r_idx_behind_origin_map         = {}
         self.r_idx_last_action_timestamp_map = {}
@@ -291,6 +294,7 @@ class GUI:
             self.r_idx_active_cmd_map[r_idx]            = na_string
             self.r_idx_progress_map[r_idx]              = 0
             self.r_idx_progress_message_map[r_idx]      = ''
+            self.r_idx_progress_color_map[r_idx]        = 'black'
             self.r_idx_behind_origin_map[r_idx]         = 0
             self.r_idx_last_action_timestamp_map[r_idx] = datetime.now() - timedelta(seconds=5)
 
@@ -647,7 +651,7 @@ class GUI:
 
         if (is_dirty):
             status       = 'Dirty'
-            status_color = color_highlight
+            status_color = color_negative
 
         else:
             status = 'Clean'
@@ -660,14 +664,17 @@ class GUI:
 
         # last finished progress
         if (datetime.now() - self.r_idx_last_action_timestamp_map[r_idx] > timedelta(seconds=5)):
+            # 5 Seconds have passed since last progress message change
             head_state = '{}'.format(self.git.head_state(repo))
+
+            if (repo.head.is_detached):
+                head_state_color = color_highlight
+
         else:
             head_state = '{}'.format(self.r_idx_progress_message_map[r_idx])
+            head_state_color = self.r_idx_progress_color_map[r_idx]
             self.reset_progress_for_repo_idx(r_idx)
 
-
-        if (repo.head.is_detached):
-            head_state_color = color_highlight
 
         tags = [re.sub(r"refs/tags/", "", "{}".format(t)) for t in repo.tags]
         no_tags_available = (len(tags) == 0)
@@ -771,6 +778,8 @@ class GUI:
             self.extraction_command   = values[txt_extraction_command]
             self.extraction_tag       = values[txt_extraction_tag]
             self.extraction_directory = values[txt_extraction_directory]
+            self.extraction_filename  = ''
+            self.extraction_extension = ''
 
             for idx in range(0, len(self.repos)):
                 # TODO: Assign. GUI layout is generated in parallel, do NOT
@@ -880,7 +889,7 @@ class GUI:
                           key=btn_dryrun),
 
                gui.Button('Extract',
-                          disabled=True,
+                          disabled=False,
                           key=btn_extract)]]
 
         # Bottom Tab assembly
@@ -1004,6 +1013,42 @@ class GUI:
                 if not selected_tag == na_string:
                     self.git.checkout(self.repos[repo_idx], selected_tag)
 
+
+            elif event == btn_extract:
+                selected_repos = self.get_selected_repos()
+                # TODO: Implement filename / extension
+
+                did_start = False
+                if self.extraction_tag != "" and self.extraction_filename != "" and self.extraction_extension != "":
+                    did_start = True
+                    self.git.extract_file_from_repos(repos = selected_repos,
+                                                     tag=self.extraction_tag,
+                                                     filename=self.extraction_filename,
+                                                     extension=self.extraction_extension,
+                                                     destination=self.destination_dir)
+
+                elif self.extraction_tag != "" and self.extraction_directory != "" and self.destination_dir != "":
+                    did_start = True
+                    self.git.extract_directory_from_repos(repos=selected_repos,
+                                                          tag=self.extraction_tag,
+                                                          directory=self.extraction_directory,
+                                                          destination=self.destination_dir)
+
+
+                for idx in self.get_selected_indeces():
+                    if did_start:
+                        if self.git.status_map[self.repos[idx]] == True:
+                            self.r_idx_progress_color_map[idx] = color_positive
+                            self.r_idx_progress_message_map[idx] = 'Extraction completed'
+
+                        else:
+                            self.r_idx_progress_color_map[idx] = color_negative
+                            self.r_idx_progress_message_map[idx] = 'Nothing found.'
+                    else:
+                        self.r_idx_progress_color_map[idx] = color_negative
+                        self.r_idx_progress_message_map[idx] = 'Missing Info'
+
+                    self.r_idx_last_action_timestamp_map[idx] = datetime.now()
 
 
             elif event == 'Show':
