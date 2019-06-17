@@ -14,6 +14,7 @@
 from .git import Git
 from git import RemoteProgress
 
+import os
 import re
 import PySimpleGUI as gui
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -1023,6 +1024,9 @@ class GUI:
         # I tried to avoid this solution! I really did. Apparently the only reliable
         # and sane solution for opening a path in the filebrowser in a multiplatform
         # application is to import webbrowser and call the path within. I'm sorry.
+
+        if not os.path.isdir(path):
+            os.mkdir(path)
 
         webbrowser.open(path.as_uri())
 
