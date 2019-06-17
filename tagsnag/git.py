@@ -63,6 +63,11 @@ class Git():
     def head_state(self, repo):
         """ Return human readable description of head location """
 
+        active_tag = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
+
+        if active_tag:
+            return active_tag
+
         # Detached state needs to be checked first or repo.active_branch will crash
         if repo.head.is_detached:
             commit_string = '{}'.format(repo.head.commit)
@@ -70,12 +75,8 @@ class Git():
 
         active_branch = self.active_branch(repo)
 
-        active_tag = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
 
-        if active_tag:
-            return active_tag
-
-        elif active_branch:
+        if active_branch:
             return active_branch
 
 
