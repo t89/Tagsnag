@@ -407,7 +407,7 @@ class GUI:
         branch = '{}'.format(self.git.active_branch(repo))
         print('{} BRANCH:{}'.format(idx, branch))
 
-        # Descriptio of Head State
+        # Description of Head State
         head_state = '{}'.format(self.git.head_state(repo))
 
         # Set to -1 so that we can distinguish if this value has been updated
