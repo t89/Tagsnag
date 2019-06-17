@@ -32,6 +32,7 @@ class Git():
         self.cwd = path
         self.cpu_count = cpu_count
         self.initial_setup()
+        self.status_map = {}
 
 
     def start_with_xml(self, xml_path):
@@ -159,10 +160,21 @@ class Git():
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
+        self.extract_directory_from_repos(repos = self.repos,
+                                          tag = tag,
+                                          directory = directory,
+                                          destination = destination)
+
+
+    def extract_directory_from_repos(self, repos, tag, directory, destination):
+        """Initiate threaded directory extraction for all repositories in working directory"""
+
         self.log.info('Initiating directory extraction on {} threads.'.format(self.cpu_count))
 
         with ThreadPoolExecutor(max_workers=self.cpu_count) as executor:
-            for repo in self.repos:
+            for repo in repos:
+                # self.status_map[repo] = 'Extract {} -> {}. Tag: {}'.format(directory, destination, tag)
+                self.status_map[repo] = False
                 executor.submit(self.extract_directory, repo, tag, directory, destination)
 
 
@@ -187,6 +199,7 @@ class Git():
 
         if len(found_paths) > 0:
             self.copy_directory_to_destination(path = found_paths[0], destination = os.path.join(destination, repo_name))
+            self.status_map[repo] = True
 
 
     def extract_file_from_all_repos(self, tag, filename, extension, destination):
@@ -195,10 +208,20 @@ class Git():
         if not self.repos:
             self.repos = self.collect_repositories(self.cwd)
 
+        self.extract_file_from_repos(repos = self.repos,
+                                     tag = tag,
+                                     filename = filename,
+                                     extension = extension,
+                                     destination = destination)
+
+
+    def extract_file_from_repos(self,repos, tag, filename, extension, destination):
+        """Initiate threaded file extraction for all repositories in working directory"""
+
         self.log.info('Initiating file extraction on {} threads.'.format(self.cpu_count))
 
         with ThreadPoolExecutor(max_workers=self.cpu_count) as executor:
-            for repo in self.repos:
+            for repo in repos:
                 executor.submit(self.extract_file, repo, tag, filename, extension, destination)
 
 
