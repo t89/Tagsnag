@@ -69,6 +69,7 @@ btn_dryrun           = '_btn_dryrun'
 btn_extract          = '_btn_extract'
 btn_exit             = '_btn_exit'
 btn_contact          = '_btn_contact'
+btn_destination_open = '_btn_destination_open'
 
 cb_autostash    = '_cb_autostash'
 cb_prune        = '_cb_prune'
@@ -870,7 +871,10 @@ class GUI:
 
                gui.Input(default_text='{}/Snagged'.format(self.path),
                          size=(70, 1),
-                         key=txt_destination_dir)],
+                         key=txt_destination_dir),
+
+               gui.Button('Open',
+                          key=btn_destination_open)],
 
               [gui.Button('Dry Run',
                           key=btn_dryrun),
@@ -979,6 +983,10 @@ class GUI:
                                    source_branch_name='origin/{}'.format(active_branch),
                                    target_branch_name='{}'.format(active_branch))
                 # self.git.update_repos(selected_repos)
+
+            elif event == btn_destination_open:
+                path = Path(self.destination_dir)
+                self.open_path(path.absolute())
 
             elif combo_branches in event:
                 repo_idx = int(event.split('_')[0])
