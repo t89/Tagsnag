@@ -7,6 +7,7 @@
 #  Copyright (c) 2019 www.geeky.gent. All rights reserved.
 #
 
+from pathlib import Path
 
 class Gitlab():
     """This class handles Gitlab related tasks"""
@@ -17,6 +18,12 @@ class Gitlab():
 
     def initial_setup(self):
         pass
+
+    @staticmethod
+    def config_exists():
+        cfg_name = '.python-gitlab.cfg'
+        cfg_path = Path('{}/{}'.format(Path.home(), cfg_name))
+        return cfg_path.exists()
 
 
 
