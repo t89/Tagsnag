@@ -1062,6 +1062,11 @@ class GUI:
         self.r_idx_progress_message_map[r_idx] = message
 
 
+    def get_selected_indeces(self):
+        """ Returns list of indeces which have been selected """
+        return [k for k,v in self.r_idx_is_selected.items() if v == True]
+
+
     def get_selected_repos(self):
         """ Returns list of repositories which have been selected """
         return [self.repos[k] for k,v in self.r_idx_is_selected.items() if v == True]
