@@ -45,7 +45,11 @@ setuptools.setup(
                                         # serialize almost anything in Python, including multiple argument functions
                                         # and instance methods without the hacky workaround of calling them from
                                         # the global-scope.
-                                        'pathos'
+                                        'pathos',
+
+                                        ##
+                                        # Neat enum library for Python
+                                        'aenum'
                                     ],
 
     classifiers                   = [
