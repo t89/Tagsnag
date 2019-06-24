@@ -283,11 +283,6 @@ class GUI:
         return self.git.collect_repositories(path)
 
 
-    def layout_console(self):
-        """ Generate layout for console output """
-        pass
-
-
     def initialize_dicts_for_repo_count(self, count):
 
         for r_idx in range(0, count):
