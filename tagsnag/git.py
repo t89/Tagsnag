@@ -408,12 +408,17 @@ class Git():
     def is_dirty(self, repo):
         """ Returns True if repository status is dirty """
 
-        diff_result = repo.index.diff(None)
+        try:
+            diff_results = repo.index.diff(repo.head.commit)
 
-        if len(diff_result) > 0:
-            return True
+        except ValueError as exception:
+            diff_results = repo.index.diff(None)
+
         else:
-            return False
+            if len(diff_results) == 0:
+                diff_results = repo.index.diff(None)
+
+        return (len(diff_results) > 0)
 
 
     def stash_repo(self, repo):
