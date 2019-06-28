@@ -452,7 +452,11 @@ class GUI:
                   gui.Text('',
                            font = 'Helvetica 12 bold',
                            size=(80, 1),
-                           key='{}'.format(lbl_gitlab_status))]
+                           key='{}'.format(lbl_gitlab_status))],
+
+                  [gui.Text('(Generation may take 15-45 seconds)',
+                           font = 'Helvetica 8',
+                            size=(80, 1))]
         ]
 
         return layout
