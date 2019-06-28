@@ -1306,7 +1306,7 @@ class GUI:
                 # self.window.FindElement('_OUTPUT_').Update(values['_IN_'])
                 pass
 
-            elif event is None or event == btn_exit:
+            elif event is None or event == btn_exit or event == exit:
                 break
 
             elif event == btn_contact:
