@@ -69,7 +69,7 @@ btn_fetch            = '_btn_fetch'
 btn_execute          = '_btn_execute'
 btn_extract          = '_btn_extract'
 btn_exit             = '_btn_exit'
-btn_contact          = '_btn_contact'
+# btn_contact          = '_btn_contact'
 btn_destination_open = '_btn_destination_open'
 
 cb_autostash    = '_cb_autostash'
@@ -1050,8 +1050,9 @@ class GUI:
         main_layout = main_layout + [[gui.Button('Exit',
                                                  key=btn_exit),
 
-                                      gui.Button('Contact',
-                                                 key=btn_contact)]]
+                                      # gui.Button('Contact',
+                                      #            key=btn_contact)
+        ]]
 
         # Main Tab Configuration
         # log_layout = [[gui.Output(size=(200, 100))]]
@@ -1310,15 +1311,13 @@ class GUI:
             elif event is None or event == btn_exit or event == exit:
                 break
 
-            elif event == btn_contact:
-                # Open Mail Client
-                # mailto_link = 'mailto:tagsnag@geeky.gent?subject=Tagsnag&body=\n\nTagsnag Version: 0.9'
-                # sp = subprocess.Popen([mailto_link, values['_URL_']], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                # self.open_path(Path(mailto_link))
-                pass
+            # elif event == btn_contact:
+            #     # Open Mail Client
+            #     mailto_link = 'mailto:tagsnag@geeky.gent?subject=Tagsnag&body=\n\nTagsnag Version: 0.9'
+            #     sp = subprocess.Popen([mailto_link, values['_URL_']], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #     self.open_path(Path(mailto_link))
+            #     pass
 
-
-        # Executor.shutdown(wait=True)
         self.window.Close()
 
 
