@@ -915,11 +915,11 @@ class GUI:
             # Gitlab
             # self.gitlab_private = values[cb_gitlab_private]
             self.gitlab_master_path    = values[btn_master_path_browse]
-            self.gitlab_url            = values[txt_gitlab_url]
-            self.gitlab_token          = values[txt_gitlab_token]
+            self.gitlab_url            = values[txt_gitlab_url].strip()
+            self.gitlab_token          = values[txt_gitlab_token].strip()
             self.gitlab_group          = values[txt_gitlab_group]
             self.gitlab_basename       = values[txt_gitlab_basename]
-            self.gitlab_count          = values[txt_gitlab_count]
+            self.gitlab_count          = values[txt_gitlab_count].strip()
             self.gitlab_description    = values[txt_gitlab_description]
             self.gitlab_administrators = values[txt_gitlab_administrators].split()
 
