@@ -387,7 +387,7 @@ class GUI:
                               disabled=False,
                               key='{}'.format(btn_gitlab_connect))],
 
-                   [gui.Text('Basename:',
+                   [gui.Text('Project basename:',
                             size = (15,1)),
 
                    gui.Input(default_text = '',
@@ -399,7 +399,11 @@ class GUI:
 
                    gui.Input(default_text = '',
                              size = (5, 1),
-                             key = txt_gitlab_count)],
+                             key = txt_gitlab_count),
+
+                   gui.Text('(1_basename, 2_basename, 3_basename...)',
+                            size=(45, 1))
+                   ],
 
                   [optional_header],
 
@@ -414,7 +418,7 @@ class GUI:
                             size = (15, 1)),
 
                    gui.Input(default_text = '',
-                             size = (45, 1),
+                             size = (70, 1),
                              key = txt_gitlab_group)],
 
                   [gui.Text('Master Repo:',
@@ -422,8 +426,9 @@ class GUI:
 
                    gui.FolderBrowse(target=txt_gitlab_master_path, key=btn_master_path_browse),
                    gui.Text('{}'.format(self.gitlab_master_path),
-                            size = (45, 1),
-                            key = txt_gitlab_master_path)],
+                            size = (60, 1),
+                            key = txt_gitlab_master_path),
+
                    gui.CBox('Keep remote in master repo after push',
                             default = False,
                             size = (40, 1),
