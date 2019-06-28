@@ -154,6 +154,25 @@ class Git():
         return found_tag
 
 
+    def clone_url_into_path(self, url, path):
+        """ Clones from a url into the provided path """
+        Repo.clone_from(url, path)
+
+
+    def assign_master_repo(self, master_path, repo_url, remote_name):
+        """ If provided master path is a repository, the repo_url is added as remote
+            and the content of the master repo pushed to the remote """
+
+        if self.is_git_dir(master_path):
+            master_repo = Repo(master_path)
+
+            remote = master_repo.create_remote(remote_name,
+                                      url=repo_url)
+
+            remote.push(refspec='{}:{}'.format('master',
+                                               'master'))
+
+
     def extract_directory_from_all_repos(self, tag, directory, destination):
         """Initiate threaded directory extraction for all repositories in working directory"""
 
@@ -189,6 +208,7 @@ class Git():
         if valid_tag == '':
             self.log.info('  [{}]: <{}> tag could not be found. Skipping repo'.format(repo_name, tag))
             return
+
         else:
             self.log.info('  [{}]: Valid Tag found: {} -> {}'.format(repo_name, tag, valid_tag))
 
@@ -525,13 +545,20 @@ class Git():
     # Filesystem methods
 
     def collect_repositories(self, path):
-
         repos = []
+
         self.log.debug('DETECT REPOSITORIES IN PATH: {}'.format(path))
 
         with os.scandir(path) as dirnames:
             for sub_dir in dirnames:
-                repo_path = os.path.join(path,  sub_dir)
+                # print('path {}'.format(path))
+                # print('sub {}'.format(sub_dir))
+
+                if not path == None:
+                    repo_path = os.path.join(path, sub_dir)
+
+                else:
+                    repo_path = os.path.join('./',sub_dir)
 
                 if self.is_git_dir(repo_path):
                     repos.append(Repo(repo_path))

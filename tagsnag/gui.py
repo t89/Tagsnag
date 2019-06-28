@@ -12,10 +12,13 @@
 # file within the root folder
 
 from .git import Git
+from .gitlab import GitlabWrapper
 from git import RemoteProgress
+from git.exc import GitCommandError
 
 import os
 import re
+
 import PySimpleGUI as gui
 from pathos.multiprocessing import ProcessingPool as Pool
 from concurrent import futures
@@ -29,10 +32,6 @@ from pathlib import Path
 
 from datetime import datetime
 from datetime import timedelta
-
-# TODO: REMOVE. Only for debugging purposes
-import time
-import inspect
 
 
 ##
@@ -55,19 +54,19 @@ color_positive = '#6EBB82'
 
 ##
 # MAIN GUI
-txt_containing_dir       = '_txt_containingdir'
-txt_destination_dir      = '_txt_destinationdir'
-txt_extraction_command   = '_txt_gitcommand'
+txt_containing_dir       = '_txt_containing_dir'
+txt_destination_dir      = '_txt_destination_dir'
+txt_direct_command       = '_txt_gitcommand'
 txt_extraction_tag       = '_txt_gittag'
 txt_extraction_directory = '_txt_gitdirectory'
 # txt_git_destination      = '_txt_gitdestination'
 
-btn_folderbrowse     = '_btn_folderbrowse'
+btn_path_browse      = '_btn_folderbrowse'
 btn_invert_selection = '_btn_invertselection'
 btn_checkout_master  = '_btn_checkout_master'
 btn_update           = '_btn_update'
+btn_fetch            = '_btn_fetch'
 btn_execute          = '_btn_execute'
-btn_dryrun           = '_btn_dryrun'
 btn_extract          = '_btn_extract'
 btn_exit             = '_btn_exit'
 btn_contact          = '_btn_contact'
@@ -75,23 +74,45 @@ btn_destination_open = '_btn_destination_open'
 
 cb_autostash    = '_cb_autostash'
 cb_prune        = '_cb_prune'
-cb_log          = '_cb_log'
-cb_verbose      = '_cb_verbose'
+# cb_log          = '_cb_log'
+# cb_verbose      = '_cb_verbose'
 cb_confirmation = '_cb_confirmation'
 
 ##
+# Gitlab GUI
+
+btn_gitlab_connect          = '_btn_gitlab_connect'
+btn_gitlab_generate         = '_btn_gitlab_generate'
+btn_gitlab_master_path      = '_btn_gitlab_master_path'
+
+cb_gitlab_private           = '_cb_gitlab_private'
+
+lbl_gitlab_status           = '_lbl_gitlab_status'
+
+txt_gitlab_administrators   = '_txt_gitlab_administrators'
+txt_gitlab_basename         = '_txt_gitlab_basename'
+txt_gitlab_count            = '_txt_gitlab_count'
+txt_gitlab_description      = '_txt_gitlab_description'
+txt_gitlab_group            = '_txt_gitlab_group'
+txt_gitlab_master_path      = '_txt_gitlab_master_path'
+txt_gitlab_sample_repo_path = '_txt_gitlab_sample_repo_path'
+txt_gitlab_token            = '_txt_gitlab_token'
+txt_gitlab_url              = '_txt_gitlab_url'
+
+##
 # Table GUI
-cb_active          = '_cb_active'
-txt_name           = '_txt_name'
-txt_head_state     = '_txt_head_state'
-txt_status         = '_txt_status'
-txt_upstream       = '_txt_upstream'
-combo_branches     = '_combo_branches'
-combo_tags         = '_combo_tags'
-btn_open           = '_btn_open'
-btn_stash          = '_btn_stash'
-txt_current_action = '_txt_currentaction'
-pb_repo_action     = '_pb_repoaction'
+btn_open               = '_btn_open'
+btn_master_path_browse = '_btn_masterpathbrowse'
+btn_stash              = '_btn_stash'
+cb_active              = '_cb_active'
+combo_branches         = '_combo_branches'
+combo_tags             = '_combo_tags'
+pb_repo_action         = '_pb_repoaction'
+txt_current_action     = '_txt_currentaction'
+txt_head_state         = '_txt_head_state'
+txt_name               = '_txt_name'
+txt_status             = '_txt_status'
+txt_upstream           = '_txt_upstream'
 
 na_string = '—'
 cmd_fetch = 'fetch'
@@ -100,8 +121,6 @@ cmd_pull = 'pull'
 
 
 class ProgressPrinter(RemoteProgress):
-
-
     ##
     # Overriding GitPythons's implementation until issue #871 is fixed.
     # I don't have the time to develop the tests at the moment.
@@ -176,11 +195,11 @@ class ProgressPrinter(RemoteProgress):
             remote, op_name, percent, cur_count, max_count, message = match.groups()  # @UnusedVariable
 
             # get operation id
-            if op_name == "Counting objects":
+            if op_name == 'Counting objects':
                 op_code |= self.COUNTING
-            elif op_name == "Compressing objects":
+            elif op_name == 'Compressing objects':
                 op_code |= self.COMPRESSING
-            elif op_name == "Writing objects":
+            elif op_name == 'Writing objects':
                 op_code |= self.WRITING
             elif op_name == 'Receiving objects':
                 op_code |= self.RECEIVING
@@ -192,8 +211,8 @@ class ProgressPrinter(RemoteProgress):
                 op_code |= self.CHECKING_OUT
             else:
                 # Note: On windows it can happen that partial lines are sent
-                # Hence we get something like "CompreReceiving objects", which is
-                # a blend of "Compressing objects" and "Receiving objects".
+                # Hence we get something like 'CompreReceiving objects', which is
+                # a blend of 'Compressing objects' and 'Receiving objects'.
                 # This can't really be prevented, so we drop the line verbosely
                 # to make sure we get informed in case the process spits out new
                 # commands at some point.
@@ -230,10 +249,10 @@ class ProgressPrinter(RemoteProgress):
         return failed_lines
 
     def update(self, op_code, cur_count, max_count=None, message=''):
-        print("op_code: {}\ncur_count: {}\nmax_count: {}\nmessage: {}\n".format(op_code,
-                                                                                cur_count,
-                                                                                max_count,
-                                                                                message))
+        # print('op_code: {}\ncur_count: {}\nmax_count: {}\nmessage: {}\n'.format(op_code,
+        #                                                                         cur_count,
+        #                                                                         max_count,
+        #                                                                         message))
 
         if self.r_idx != None and self.delegate:
             progress = cur_count / (max_count or 100.0)
@@ -248,7 +267,31 @@ class GUI:
         self.path      = path
         self.cpu_count = cpu_count
         self.git       = Git(self.path)
-        self.repos     = self.get_repositories_in_path(self.path)
+        self.gitlab    = GitlabWrapper()
+
+        # Flag breaking the mainloop
+        self.changed_layout = False
+
+        self.repos = self.get_repositories_in_path(self.path)
+
+        self.reset_maps()
+
+        self.gitlab_status_message   = ''
+        self.gitlab_status_timestamp = datetime.now() - timedelta(seconds=5)
+        self.gitlab_status_color     = 'black'
+        self.gitlab_master_path      = ''
+        self.gitlab_description      = ''
+        self.gitlab_administrators   = []
+
+        self.did_fetch = True
+
+        self.window = None
+
+        self.initial_setup()
+
+
+    def reset_maps(self):
+        """ Reset all mappings """
 
         self.r_idx_is_selected               = {}
         self.r_idx_progress_map              = {}
@@ -258,13 +301,10 @@ class GUI:
         self.r_idx_behind_origin_map         = {}
         self.r_idx_last_action_timestamp_map = {}
 
+        for r_idx, repo in enumerate(self.repos):
+            self.reset_progress_for_repo_idx(r_idx)
+
         self.initialize_dicts_for_repo_count(len(self.repos))
-
-        self.did_fetch = True
-
-        self.window    = None
-
-        self.initial_setup()
 
 
     def initial_setup(self):
@@ -321,6 +361,92 @@ class GUI:
         return sizes_dict
 
 
+    def layout_gitlab(self):
+
+        spacer = gui.Text('_' * 133)
+        optional_header = gui.Text('___ Optional: {}'.format('_'*121))
+
+        layout = [[gui.Text('Gitlab URL:',
+                            size=(15, 1)),
+
+                   gui.Input(default_text='https://git.cs.upb.de/',
+                             size=(30, 1),
+                             key=txt_gitlab_url),
+
+                   gui.Text('Private Token:',
+                            size=(15,1)),
+
+                   gui.Input(default_text='',
+                             size=(30, 1),
+                             password_char = '#',
+                             key=txt_gitlab_token),
+
+                   gui.Button('Login',
+                              size=(8,1),
+                              disabled=False,
+                              key='{}'.format(btn_gitlab_connect))],
+
+                   [gui.Text('Basename:',
+                            size = (15,1)),
+
+                   gui.Input(default_text = '',
+                             size = (30, 1),
+                             key = txt_gitlab_basename),
+
+                   gui.Text('Count:',
+                            size = (15,1)),
+
+                   gui.Input(default_text = '',
+                             size = (5, 1),
+                             key = txt_gitlab_count)],
+
+                  [optional_header],
+
+                  [gui.Text('Project Description',
+                            size = (15, 1)),
+
+                   gui.Input(default_text = '',
+                             size = (70, 1),
+                             key = txt_gitlab_description)],
+
+                  [gui.Text('Group:',
+                            size = (15, 1)),
+
+                   gui.Input(default_text = '',
+                             size = (45, 1),
+                             key = txt_gitlab_group)],
+
+                  [gui.Text('Master Repo:',
+                            size=(15, 1)),
+
+                   gui.FolderBrowse(target=txt_gitlab_master_path, key=btn_master_path_browse),
+                   gui.Text('{}'.format(self.gitlab_master_path),
+                            size = (45, 1),
+                            key = txt_gitlab_master_path)],
+
+                  [gui.Text('Administrator Gitlab usernames (divided by spaces):',
+                            size=(45, 2))],
+
+                  [gui.Multiline('',
+                                 size=(5, 2),
+                                 key = txt_gitlab_administrators)],
+
+                  [spacer],
+
+                  [gui.Button('Generate',
+                              size=(8, 1),
+                              disabled=False,
+                              key='{}'.format(btn_gitlab_generate)),
+
+                  gui.Text('',
+                           font = 'Helvetica 12 bold',
+                           size=(80, 1),
+                           key='{}'.format(lbl_gitlab_status))]
+        ]
+
+        return layout
+
+
     def layout_repo_table(self, path):
         """ Generates layout for table """
 
@@ -360,7 +486,12 @@ class GUI:
                   ]]
 
         # Ignore the pooling completely, if we are limited to one core anyway.
-        if (self.cpu_count > 1):
+
+        # @Refactor: Threadpool crashes when changing the main-path and redrawing is. Most certainly
+        # because of the recursive call within create_window(). Since the performance gain is neglectable,
+        # and I'm super short on time, I force this section to run single threadedly.
+        if (False):
+        # if (self.cpu_count > 1):
             with Pool(processes=self.cpu_count) as pool:
                 layout_rows = list(pool.map(lambda e: self.table_row_layout_for_repo(e[0], e[1]),
                                             enumerate(self.repos)))
@@ -484,8 +615,8 @@ class GUI:
                         progress_printer.repo_idx = idx
                         progress_printer.delegate = self
 
-                        fetch_result                   = self.git.fetch(repo, progress_printer = progress_printer)
-                        behind                         = self.git.behind_branch(repo, 'origin', branch)
+                        fetch_result = self.git.fetch(repo, progress_printer = progress_printer)
+                        behind       = self.git.behind_branch(repo, 'origin', branch)
                         break
 
         self.r_idx_behind_origin_map[idx] = behind
@@ -494,131 +625,69 @@ class GUI:
     def table_row_layout_for_repo(self, idx, repo):
         """ Takes index and repo to generate a table row for it. """
 
-        # name = self.git.get_repo_name(repo)
-
-        # status_color     = 'black'
-        # upstream_color   = 'black'
-        # head_state_color = 'black'
-
-        # is_dirty         = self.git.is_dirty(repo)
-        # if (is_dirty):
-        #     status       = 'Dirty'
-        #     status_color = color_highlight
-
-        # else:
-        #     status = 'Clean'
-
-        # # Name of current branch
-        # branch = '{}'.format(self.git.active_branch(repo))
-
-        # # Descriptio of Head State
-        # head_state = '{}'.format(self.git.head_state(repo))
-
-        # if (repo.head.is_detached):
-        #     head_state_color = color_highlight
-
-        # # Set to -1 so that we can distinguish if this value has been updated
-        # behind = -1
-
-        # # CHECK IF BRANCH IS NONE!!
-        # # print('Dis none? {}'.format(branch))
-        # # print(name)
-        # # print(repo.remotes)
-        # # print('Current Branch: {}'.format(branch))
-        # # print('Current Headstate: {}'.format(head_state))
-
-        # if (branch in repo.branches):
-        #     if (len(repo.remotes) > 0):
-        #         for r in repo.remotes:
-        #             if r.name == 'origin':
-        #                 self.r_idx_active_cmd_map[idx] = cmd_fetch
-        #                 fetch_result                   = self.git.fetch(repo, progress_printer = ProgressPrinter())
-        #                 behind                         = self.git.behind_branch(repo, 'origin', branch)
-        #                 break
-
-        # if (behind == -1):
-        #     upstream = 'n/a'
-
-        # elif (behind == 0):
-        #     upstream = 'Up to date'
-
-        # else:
-        #     upstream       = "{} behind".format(behind)
-        #     upstream_color = color_highlight
-
-        # tags = [t.path.lstrip('refs/tags/') for t in repo.tags]
-        # no_tags_available = (len(tags) == 0)
-
-        # if (no_tags_available):
-        #     tags.append('No Tags')
-        # else:
-        #     tags.sort(reverse         = True)
-
-        # repo_path = self.git.get_root(repo)
-
         sizes = self.table_sizes_dict()
 
-        layout                         = [[gui.Text('{}'.format(na_string),
-                            font       = 'Helvetica 10 italic',
+        layout = [[gui.Text('{}'.format(na_string),
+                            font = 'Helvetica 10 italic',
                             text_color = 'black',
-                            size       = sizes[txt_current_action],
-                            key                = '{}{}'.format(idx, txt_current_action)),
+                            size = sizes[txt_current_action],
+                            key = '{}{}'.format(idx, txt_current_action)),
 
                    gui.CBox('',
                             default = True,
-                            size    = sizes[cb_active],
+                            size = sizes[cb_active],
                             key='{}{}'.format(idx, cb_active)),
 
                    gui.Text('{}'.format('Loading'),
                             font = 'Helvetica 10 bold',
                             size = sizes[txt_name],
-                            key          = '{}{}'.format(idx, txt_name)),
+                            key = '{}{}'.format(idx, txt_name)),
 
                    gui.Text('{}'.format(''),
                             text_color = 'black',
-                            size       = sizes[txt_head_state],
-                            key                = '{}{}'.format(idx, txt_head_state)),
+                            size = sizes[txt_head_state],
+                            key = '{}{}'.format(idx, txt_head_state)),
 
                    gui.Text('{}'.format(''),
                             text_color='black',
                             size = sizes[txt_status],
-                            key          = '{}{}'.format(idx, txt_status)),
+                            key = '{}{}'.format(idx, txt_status)),
 
                    gui.Text('{}'.format(''),
                             text_color = 'black',
-                            size       = sizes[txt_upstream],
-                            key                = '{}{}'.format(idx, txt_upstream)),
+                            size = sizes[txt_upstream],
+                            key = '{}{}'.format(idx, txt_upstream)),
 
                    gui.InputCombo([na_string],
-                                  size     = sizes[combo_branches],
-                                  key      = '{}{}'.format(idx, combo_branches),
+                                  size = sizes[combo_branches],
+                                  key = '{}{}'.format(idx, combo_branches),
                                   # change_submits = True,
                                   enable_events = True,
                                   disabled = True),
 
                    gui.InputCombo([na_string],
-                                  size     = sizes[combo_tags],
-                                  key      = '{}{}'.format(idx, combo_tags),
+                                  size = sizes[combo_tags],
+                                  key = '{}{}'.format(idx, combo_tags),
                                   # change_submits = True,
                                   enable_events = True,
                                   disabled = True),
 
                    gui.Button('Stash',
-                              size     = sizes[btn_stash],
+                              size = sizes[btn_stash],
                               disabled = True,
-                              key      = '{}{}'.format(idx, btn_stash)),
+                              key = '{}{}'.format(idx, btn_stash)),
 
                    gui.Button('Open',
-                              size      = sizes[btn_open],
+                              size = sizes[btn_open],
                               # tooltip         = 'Open in Filebrowser',
-                              key       = '{}{}'.format(idx, btn_open))],
+                              key = '{}{}'.format(idx, btn_open))],
 
                   [gui.ProgressBar(100,
                                    orientation  = 'h',
-                                   size                 = sizes[pb_repo_action],
-                                   bar_color    = (color_accent, 'white'),
-                                   border_width         = 0,
-                                   key          = '{}{}'.format(idx, pb_repo_action))]
+                                   size = sizes[pb_repo_action],
+                                   bar_color = (color_accent, 'white'),
+                                   border_width = 0,
+                                   key = '{}{}'.format(idx, pb_repo_action))]
         ]
 
         return layout
@@ -629,6 +698,63 @@ class GUI:
         self.r_idx_progress_map[r_idx]         = 0
         self.r_idx_active_cmd_map[r_idx]       = na_string
         # self.r_idx_progress_message_map[r_idx] = na_string
+
+
+    def set_gitlab_status(self, status, color):
+        self.gitlab_status_message   = status
+        self.gitlab_status_color     = color
+        self.gitlab_status_timestamp = datetime.now()
+
+
+    def refresh_static_gui(self):
+
+        # Enable / Disable execute button and direct command field
+        gui_btn_execute = self.window.FindElement(btn_execute)
+        gui_txt_direct_command = self.window.FindElement(txt_direct_command)
+
+        gui_btn_execute.Update(disabled = not self.is_confirmed)
+        gui_txt_direct_command.Update(disabled = not self.is_confirmed)
+
+        # Update Gitlab Section
+        gui_lbl_gitlab_status = self.window.FindElement(lbl_gitlab_status)
+        gui_btn_gitlab_generate = self.window.FindElement(btn_gitlab_generate)
+
+        gitlab_status_color   = color_negative
+        gitlab_status_message = 'Login required.'
+
+        if self.gitlab.gitlab == None:
+            gui_btn_gitlab_generate.Update(disabled = True)
+
+        else:
+            gui_btn_gitlab_generate.Update(disabled = False)
+
+        if not self.gitlab == None:
+            # The GitlabWrapper has been initialized
+            gitlab_status_message = self.gitlab.status_message
+
+            if not ((datetime.now() - self.gitlab_status_timestamp > timedelta(seconds=5))):
+                # _No_ 3 seconds have passed since unplanned Gitlab status update
+                gitlab_status_color   = self.gitlab_status_color
+                gitlab_status_message = self.gitlab_status_message
+
+            else:
+                # More than 3 seconds elapsed since an unplanned notification
+                # check status of GitlabWrapper
+
+                if (self.gitlab.status == GitlabWrapper.NEUTRAL_STATUS):
+                    gitlab_status_color = 'black'
+
+                elif (self.gitlab.status == GitlabWrapper.POSITIVE_STATUS):
+                    gitlab_status_color = color_positive
+
+                elif (self.gitlab.status == GitlabWrapper.NEGATIVE_STATUS):
+                    gitlab_status_color = color_negative
+
+                elif (self.gitlab.status == GitlabWrapper.ACTION_REQUIRED_STATUS):
+                    gitlab_status_color = color_highlight
+
+        gui_lbl_gitlab_status.Update(value = gitlab_status_message,
+                                     text_color = gitlab_status_color)
 
 
     def refresh_gui_for_repo_idx(self, r_idx, include_tags = False):
@@ -671,7 +797,7 @@ class GUI:
             self.reset_progress_for_repo_idx(r_idx)
 
 
-        tags = [re.sub(r"refs/tags/", "", "{}".format(t)) for t in repo.tags]
+        tags = [re.sub(r'refs/tags/', '', '{}'.format(t)) for t in repo.tags]
         no_tags_available = (len(tags) == 0)
 
         if (no_tags_available):
@@ -682,7 +808,7 @@ class GUI:
             tags.insert(0, na_string) # No selection
 
 
-        branches = [re.sub(r"refs/heads/", "", "{}".format(b)) for b in repo.branches]
+        branches = [re.sub(r'refs/heads/', '', '{}'.format(b)) for b in repo.branches]
         no_branches_available = (len(branches) == 0)
 
         if (no_branches_available):
@@ -725,7 +851,7 @@ class GUI:
             upstream = 'Up to date'
 
         else:
-            upstream       = "{} behind".format(behind_count)
+            upstream       = '{} behind'.format(behind_count)
             upstream_color = color_highlight
 
 
@@ -764,37 +890,60 @@ class GUI:
             # Assign Checkboxes
             self.should_autostash = values[cb_autostash]
             self.should_prune     = values[cb_prune]
-            self.should_log       = values[cb_log]
-            self.is_verbose       = values[cb_verbose]
+            # self.should_log       = values[cb_log]
+            # self.is_verbose       = values[cb_verbose]
             self.is_confirmed     = values[cb_confirmation]
 
             # Assign input fields
             self.destination_dir      = values[txt_destination_dir]
-            self.extraction_command   = values[txt_extraction_command]
+            self.direct_command       = values[txt_direct_command]
             self.extraction_tag       = values[txt_extraction_tag]
             self.extraction_directory = values[txt_extraction_directory]
+
+            selected_path = values[btn_path_browse]
+            changed_path = (selected_path != '') and (self.path != selected_path)
+
+            if changed_path:
+                self.path = selected_path
+                self.repos = self.get_repositories_in_path(self.path)
+                self.changed_layout = True
+
+            # TODO Remove if this feature is dropped
             self.extraction_filename  = ''
             self.extraction_extension = ''
 
-            for idx in range(0, len(self.repos)):
-                # TODO: Assign. GUI layout is generated in parallel, do NOT
-                # assume the order to be the same as in self.repos!
-                active = values['{}{}'.format(idx, cb_active)]
-                self.r_idx_is_selected[idx] = active
+            # Gitlab
+            # self.gitlab_private = values[cb_gitlab_private]
+            self.gitlab_master_path    = values[btn_master_path_browse]
+            self.gitlab_url            = values[txt_gitlab_url]
+            self.gitlab_token          = values[txt_gitlab_token]
+            self.gitlab_group          = values[txt_gitlab_group]
+            self.gitlab_basename       = values[txt_gitlab_basename]
+            self.gitlab_count          = values[txt_gitlab_count]
+            self.gitlab_description    = values[txt_gitlab_description]
+            self.gitlab_administrators = values[txt_gitlab_administrators].split()
+
+            if not changed_path:
+                for idx in range(0, len(self.repos)):
+                    active = values['{}{}'.format(idx, cb_active)]
+                    self.r_idx_is_selected[idx] = active
+
+            return changed_path
+
 
         except KeyError as error:
             print(error)
 
 
-    def create_window(self):
-        """ Setup GUI layout and start loop """
+    def generate_layout(self):
+        """ Generate GUI layout """
 
+        containing_folder_layout = [[gui.Text('Containing Folder',
+                                              size=(15, 1)),
+                                     gui.FolderBrowse(target=txt_containing_dir, key=btn_path_browse),
+                                     gui.Text('{}'.format(self.path), key=txt_containing_dir)]]
 
-        main_layout = [[gui.Text('Containing Folder',
-                                 size=(15, 1)),
-                        gui.FolderBrowse(target=txt_containing_dir, key=btn_folderbrowse),
-                        gui.Text('{}'.format(self.path), key=txt_containing_dir)]]
-
+        main_layout = []
         # Spacer
         spacer = [[gui.Text('_' * 133)]]
 
@@ -810,8 +959,12 @@ class GUI:
 
         # These elements will be placed directly below the table and are not mode specific
         main_button_row_layout = [
-            [gui.Button('Invert Selection',
+            [gui.Text('Selection:')],
+            [gui.Button('Invert',
                         key=btn_invert_selection),
+
+             gui.Button('Fetch',
+                        key=btn_fetch),
 
              gui.Button('Checkout \'master\'',
                         key=btn_checkout_master),
@@ -827,20 +980,21 @@ class GUI:
                       default=True,
                       key=cb_prune),
 
-             gui.CBox('Log',
-                      default=False,
-                      key=cb_log),
+             # gui.CBox('Log',
+             #          default=False,
+             #          key=cb_log),
 
-             gui.CBox('Verbose',
-                      default=False,
-                      key=cb_verbose)]]
+             # gui.CBox('Verbose',
+             #          default=False,
+             #          key=cb_verbose)
+            ]]
 
         main_layout = main_layout + main_button_row_layout
 
         command_mode_layout = [[gui.Input(default_text='git stash',
                                           size=(70, 1),
                                           disabled=True,
-                                          key=txt_extraction_command),
+                                          key=txt_direct_command),
 
              gui.Button('Execute for selection',
                         disabled=True,
@@ -880,10 +1034,7 @@ class GUI:
                gui.Button('Open',
                           key=btn_destination_open)],
 
-              [gui.Button('Dry Run',
-                          key=btn_dryrun),
-
-               gui.Button('Extract',
+              [gui.Button('Extract',
                           disabled=False,
                           key=btn_extract)]]
 
@@ -903,32 +1054,46 @@ class GUI:
                                                  key=btn_contact)]]
 
         # Main Tab Configuration
-        log_layout = [[gui.Output(size=(200, 100))]]
+        # log_layout = [[gui.Output(size=(200, 100))]]
 
-        empty_layout = [[]]
-        main_tab_layout = [[gui.TabGroup([[gui.Tab('Main',
-                                                   main_layout),
+        gitlab_layout = self.layout_gitlab()
+        main_tab = [[gui.TabGroup([[gui.Tab('Main',
+                                            main_layout),
 
-                                           gui.Tab('Log',
-                                                   empty_layout)]])]]
+                                           gui.Tab('Gitlab',
+                                                   gitlab_layout)]])]]
+
+        main_tab_layout = containing_folder_layout + main_tab
+        return main_tab_layout
+
+
+    def create_window(self):
+        """ Assign GUI layout and start loop """
+
+        layout = self.generate_layout()
 
         self.window = gui.Window('TagSnag',
-                            icon='tagsnag.ico').Layout(main_tab_layout).Finalize()
+                            icon='tagsnag.ico').Layout(layout).Finalize()
 
         # GUI Event Loop
-        while True:
-            event, values = self.window.Read(timeout=50)
+        while not self.changed_layout:
+            event, values = self.window.Read(timeout=5)
+            changed_path = self.assign_values(values)
 
-            include_tags = False
-            if self.did_fetch:
-                self.did_fetch = False
-                include_tags   = True
+            if changed_path:
+                break;
+
+            # include_tags = False
+            # if self.did_fetch:
+            #     self.did_fetch = False
+            #     include_tags   = True
+
+            self.refresh_static_gui()
 
             for i in range(0, (len(self.repos))):
                 self.window.FindElement('{}{}'.format(i, pb_repo_action)).UpdateBar(self.r_idx_progress_map[i])
-                self.refresh_gui_for_repo_idx(i, include_tags)
-
-            self.assign_values(values)
+                # self.refresh_gui_for_repo_idx(i, include_tags)
+                self.refresh_gui_for_repo_idx(i, True)
 
             if event != gui.TIMEOUT_KEY:
                 # print(event, values)
@@ -977,7 +1142,7 @@ class GUI:
                     active_branch = self.git.active_branch(repo)
                     print('Active Branch {}'.format(active_branch))
 
-                    if (active_branch == "") or (repo.head.is_detached):
+                    if (active_branch == '') or (repo.head.is_detached):
                         active_branch = 'master'
 
                     print('Active Branch {}'.format(active_branch))
@@ -988,11 +1153,17 @@ class GUI:
                                    target_branch_name='{}'.format(active_branch))
                 # self.git.update_repos(selected_repos)
 
+            elif event == btn_fetch:
+                selected_repos = self.get_selected_repos()
+                self.fetch_repos(selected_repos)
+
             elif event == btn_destination_open:
+                # Open destination dir
                 path = Path(self.destination_dir)
                 self.open_path(path.absolute())
 
             elif combo_branches in event:
+                # Branch selection
                 repo_idx = int(event.split('_')[0])
                 element_name = '{}{}'.format(repo_idx, combo_branches)
                 selected_branch = values[element_name]
@@ -1001,6 +1172,7 @@ class GUI:
                     self.git.checkout(self.repos[repo_idx], selected_branch)
 
             elif combo_tags in event:
+                # Tag selection
                 repo_idx = int(event.split('_')[0])
                 element_name = '{}{}'.format(repo_idx, combo_tags)
                 selected_tag = values[element_name]
@@ -1014,7 +1186,7 @@ class GUI:
                 # TODO: Implement filename / extension
 
                 did_start = False
-                if self.extraction_tag != "" and self.extraction_filename != "" and self.extraction_extension != "":
+                if self.extraction_tag != '' and self.extraction_filename != '' and self.extraction_extension != '':
                     did_start = True
                     self.git.extract_file_from_repos(repos = selected_repos,
                                                      tag=self.extraction_tag,
@@ -1022,7 +1194,7 @@ class GUI:
                                                      extension=self.extraction_extension,
                                                      destination=self.destination_dir)
 
-                elif self.extraction_tag != "" and self.extraction_directory != "" and self.destination_dir != "":
+                elif self.extraction_tag != '' and self.extraction_directory != '' and self.destination_dir != '':
                     did_start = True
                     self.git.extract_directory_from_repos(repos=selected_repos,
                                                           tag=self.extraction_tag,
@@ -1034,16 +1206,99 @@ class GUI:
                     if did_start:
                         if self.git.status_map[self.repos[idx]] == True:
                             self.r_idx_progress_color_map[idx] = color_positive
-                            self.r_idx_progress_message_map[idx] = 'Extraction completed'
+                            self.r_idx_progress_message_map[idx] = 'Extraction completed.'
 
                         else:
                             self.r_idx_progress_color_map[idx] = color_negative
                             self.r_idx_progress_message_map[idx] = 'Nothing found.'
                     else:
                         self.r_idx_progress_color_map[idx] = color_negative
-                        self.r_idx_progress_message_map[idx] = 'Missing Info'
+                        self.r_idx_progress_message_map[idx] = 'Missing information.'
 
                     self.r_idx_last_action_timestamp_map[idx] = datetime.now()
+
+
+            elif event == btn_execute:
+
+                if self.is_confirmed and self.direct_command != '':
+                    # better safe than sorry
+                    for idx in self.get_selected_indeces():
+                        repo = self.repos[idx]
+
+                        try:
+                            git = repo.git
+                            git.execute(self.direct_command.split())
+
+                            self.r_idx_progress_color_map[idx] = color_positive
+                            self.r_idx_progress_message_map[idx] = '{}'.format(self.direct_command)
+
+                        except GitCommandError as exception:
+
+                            self.r_idx_progress_color_map[idx] = color_negative
+                            # self.r_idx_progress_message_map[idx] = 'Error: {}'.format(exception)
+                            self.r_idx_progress_message_map[idx] = 'Fail: {}'.format(self.direct_command)
+
+                            if exception.stdout:
+                                print('!! stdout:')
+                                print('{}'.format(exception.stdout))
+
+                            if exception.stderr:
+                                print('!! stderr:')
+                                print('{}'.format(exception.stderr))
+
+                        finally:
+                            self.r_idx_last_action_timestamp_map[idx] = datetime.now()
+
+                    # self.fetch_repos(self.get_selected_repos())
+
+            elif event == btn_gitlab_connect:
+
+                if self.gitlab_url != '' and self.gitlab_token != '':
+                    self.gitlab.login_with_token(url = self.gitlab_url,
+                                                 token = self.gitlab_token)
+                else:
+                    self.set_gitlab_status(status = 'Missing information.',
+                                           color = color_negative)
+
+            elif event == btn_gitlab_generate:
+                # Generate n projects
+
+                p_id_url_map = {}
+
+                if not ((self.gitlab_basename == '') or (self.gitlab_count == '')):
+
+                    if self.is_integer(self.gitlab_count):
+                        count = int(self.gitlab_count)
+
+                        p_id_url_map = self.gitlab.generate_projects(basename = self.gitlab_basename,
+                                                                     count = count,
+                                                                     description = self.gitlab_description,
+                                                                     group_name = self.gitlab_group,
+                                                                     administrators = self.gitlab_administrators)
+
+                    else:
+                        # Not a valid number
+                        self.set_gitlab_status(status = 'Invalid count value.',
+                                               color = color_negative)
+                else:
+                    # Empty basename / number -> display status
+                    self.set_gitlab_status(status = 'Missing information.',
+                                           color = color_negative)
+
+
+                if (len(p_id_url_map) > 0):
+
+                    for p_id, url in p_id_url_map.items():
+                        repo_name = os.path.basename(url).rstrip('.git')
+
+                        if (self.gitlab_master_path != ''):
+                            self.git.assign_master_repo(master_path = self.gitlab_master_path,
+                                                        repo_url = url,
+                                                        remote_name = '{}'.format(p_id))
+
+                        self.git.clone_url_into_path(url = url,
+                                                     path = os.path.join(self.path, repo_name))
+                    self.changed_layout = True
 
 
             elif event == 'Show':
@@ -1062,7 +1317,17 @@ class GUI:
                 pass
 
 
+        # Executor.shutdown(wait=True)
         self.window.Close()
+
+
+        # Dirty, recursive solution
+        # @Refactor
+
+        if self.changed_layout:
+            self.changed_layout = False
+            self.reset_maps()
+            self.create_window()
 
 
     def open_path(self, path):
@@ -1112,12 +1377,9 @@ class GUI:
         return [self.repos[k] for k,v in self.r_idx_is_selected.items() if v == True]
 
 
-    def inspect(self, element):
-        # self.window.FindElement('{}{}'.format(repo_idx, combo_branches)).help()
-        for i in inspect.getmembers(element):
-            # Ignores anything starting with underscore
-            # (that is, private and protected attributes)
-            if not i[0].startswith('_'):
-                # Ignores methods
-                if not inspect.ismethod(i[1]):
-                    print(i)
+    def is_integer(self, string):
+       try:
+           int(string)
+           return True
+       except ValueError:
+           return False
