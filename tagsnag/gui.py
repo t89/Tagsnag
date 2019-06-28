@@ -1298,8 +1298,9 @@ class GUI:
 
                         self.git.clone_url_into_path(url = url,
                                                      path = os.path.join(self.path, repo_name))
-                    self.changed_layout = True
 
+                    self.repos = self.get_repositories_in_path(self.path)
+                    self.changed_layout = True
 
             elif event == 'Show':
                 # change the "output" element to be the value of "input" element
