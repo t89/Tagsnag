@@ -159,7 +159,7 @@ class Git():
         Repo.clone_from(url, path)
 
 
-    def assign_master_repo(self, master_path, repo_url, remote_name):
+    def assign_master_repo(self, master_path, repo_url, remote_name, keep_remote=False):
         """ If provided master path is a repository, the repo_url is added as remote
             and the content of the master repo pushed to the remote """
 
@@ -171,6 +171,10 @@ class Git():
 
             remote.push(refspec='{}:{}'.format('master',
                                                'master'))
+
+            if not keep_remote:
+                # Delete the remote post-push
+                assert not master_repo.delete_remote(remote).exists()
 
 
     def extract_directory_from_all_repos(self, tag, directory, destination):

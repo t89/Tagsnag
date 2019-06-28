@@ -86,6 +86,7 @@ btn_gitlab_generate         = '_btn_gitlab_generate'
 btn_gitlab_master_path      = '_btn_gitlab_master_path'
 
 cb_gitlab_private           = '_cb_gitlab_private'
+cb_gitlab_keep_remote       = '_cb_gitlab_keep_remote'
 
 lbl_gitlab_status           = '_lbl_gitlab_status'
 
@@ -423,6 +424,11 @@ class GUI:
                    gui.Text('{}'.format(self.gitlab_master_path),
                             size = (45, 1),
                             key = txt_gitlab_master_path)],
+                   gui.CBox('Keep remote in master repo after push',
+                            default = False,
+                            size = (40, 1),
+                            key=cb_gitlab_keep_remote),
+                  ],
 
                   [gui.Text('Administrator Gitlab usernames (divided by spaces):',
                             size=(45, 2))],
@@ -914,6 +920,8 @@ class GUI:
 
             # Gitlab
             # self.gitlab_private = values[cb_gitlab_private]
+            self.gitlab_keep_remote = values[cb_gitlab_keep_remote]
+
             self.gitlab_master_path    = values[btn_master_path_browse]
             self.gitlab_url            = values[txt_gitlab_url].strip()
             self.gitlab_token          = values[txt_gitlab_token].strip()
@@ -1295,7 +1303,8 @@ class GUI:
                         if (self.gitlab_master_path != ''):
                             self.git.assign_master_repo(master_path = self.gitlab_master_path,
                                                         repo_url = url,
-                                                        remote_name = '{}'.format(p_id))
+                                                        remote_name = '{}'.format(p_id),
+                                                        keep_remote = self.gitlab_keep_remote)
 
                         self.git.clone_url_into_path(url = url,
                                                      path = os.path.join(self.path, repo_name))
