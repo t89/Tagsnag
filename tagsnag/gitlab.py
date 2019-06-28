@@ -47,7 +47,7 @@ class GitlabWrapper():
             self.gitlab = gitlab.Gitlab(url,
                                         private_token = token)
 
-            print(self.gitlab.auth())
+            self.gitlab.auth()
 
             self.status_message = "Successfully logged into {}.".format(url)
             self.status = GitlabWrapper.POSITIVE_STATUS
