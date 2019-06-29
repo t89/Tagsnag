@@ -13,6 +13,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from tagsnag.tagsnag import Tagsnag
+from tagsnag.gui import GUI
 
 
 def get_script_path():
@@ -20,8 +21,10 @@ def get_script_path():
 
 
 def display_help():
-    print("{}".format('Insufficient arguments. For a full description run: tagsnag --help'))
+    print("{}".format('Insufficient arguments. Starting GUI. (For a full description run: tagsnag --help)'))
 
+def start_gui():
+    g = GUI()
 
 def main():
     try:
@@ -99,6 +102,8 @@ def main():
                     destination=destination)
 
         elif not should_update:
+            # Apparently Tagsnag is called without anything to do. Start GUI
+            start_gui()
             display_help()
 
 

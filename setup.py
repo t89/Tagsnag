@@ -9,7 +9,7 @@ with open('LICENSE', 'r') as fh:
 
 setuptools.setup(
     name                          = 'Tagsnag',
-    version                       = '0.9.0',
+    version                       = '0.10.0',
     author                        = 'Thomas Johannesmeyer',
     author_email                  = 'opensource@geeky.gent',
     description                   = 'Search files over multiple Git repos, and extract a certain version',
@@ -22,7 +22,30 @@ setuptools.setup(
                                         'console_scripts': ['tagsnag=tagsnag.__main__:main'],
                                     },
     install_requires              = [
-                                        'gitpython',
+
+                                        ##
+                                        # Interact with Git from within Python without using
+                                        # the shell (too often). Careful, this seems not to be
+                                        # garbage collected very well.
+                                        # Fixed to 2.1.11 because I replaced a private RemoteProgress
+                                        # function. See ./tagsnag/gui.py
+                                        # https://github.com/gitpython-developers/GitPython/issues/871
+                                        'gitpython==2.1.11',
+
+                                        ##
+                                        # Gitlab integration
+                                        'python-gitlab',
+
+                                        ##
+                                        # Multiplatform GUI layer build on top of TKInter.
+                                        'PySimpleGUI',
+
+                                        ##
+                                        # In comparison to the default multiprocessing module, pathos is able to
+                                        # serialize almost anything in Python, including multiple argument functions
+                                        # and instance methods without the hacky workaround of calling them from
+                                        # the global-scope.
+                                        'pathos'
                                     ],
 
     classifiers                   = [
