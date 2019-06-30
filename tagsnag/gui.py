@@ -379,7 +379,7 @@ class GUI:
 
                    gui.Input(default_text='',
                              size=(30, 1),
-                             password_char = '#',
+                             password_char = '*',
                              key=txt_gitlab_token),
 
                    gui.Button('Login',
