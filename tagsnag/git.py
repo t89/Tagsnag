@@ -596,8 +596,8 @@ class Git():
 
         for dirpath, dirnames, files in os.walk(path):
 
-            # Skip .git folder
-            if ".git" in dirpath:
+            # Skip .git and root directory
+            if ('.git' in dirpath) or (path == dirpath):
                 continue
 
             if normalized_dirname in dirpath.lower():
