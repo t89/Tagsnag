@@ -980,7 +980,7 @@ class GUI:
             [gui.Button('Invert',
                         key=btn_invert_selection),
 
-             gui.Button('Fetch',
+             gui.Button('Refresh',
                         key=btn_fetch),
 
              gui.Button('Checkout \'master\'',
