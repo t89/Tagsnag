@@ -30,7 +30,7 @@ setuptools.setup(
                                         # Fixed to 2.1.11 because I replaced a private RemoteProgress
                                         # function. See ./tagsnag/gui.py
                                         # https://github.com/gitpython-developers/GitPython/issues/871
-                                        'gitpython==2.1.11',
+                                        'gitpython==3.1.32',
 
                                         ##
                                         # Gitlab integration
